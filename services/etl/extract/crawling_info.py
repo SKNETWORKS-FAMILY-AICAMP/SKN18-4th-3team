@@ -1,9 +1,13 @@
 import json
 import asyncio
 import re
+import sys
 from urllib.parse import quote
 from playwright.async_api import async_playwright
 from pathlib import Path
+
+# 출력 버퍼링 비활성화 (크롤링 진행 상황 실시간 출력)
+sys.stdout.reconfigure(line_buffering=True)
 
 
 # ==============================
