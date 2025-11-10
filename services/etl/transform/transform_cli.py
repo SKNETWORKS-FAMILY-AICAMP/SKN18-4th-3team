@@ -2,8 +2,8 @@
 Transform CLI: FAQ 및 질병 정보 데이터를 병렬로 변환
 
 이 스크립트는 다음 작업을 병렬로 수행합니다:
-1. FAQ 데이터 Transform (diseases_faq.json → faq_chunks.json)
-2. 질병 정보 Transform (diseases_info.json → info_chunks.json + image_metadata.json)
+1. FAQ 데이터 Transform (diseases_faq.json → vectorDB/faq_chunks.csv)
+2. 질병 정보 Transform (diseases_info.json → vectorDB/info_chunks.csv + RDB/image_metadata.csv)
 
 사용 예시:
     # 기본 실행 (병렬)
@@ -22,6 +22,7 @@ import argparse
 from pathlib import Path
 from typing import Dict, Any
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import pandas as pd
 
 # Transform 함수 임포트
 from transform_faq import FAQTransformer
@@ -48,7 +49,7 @@ def run_faq_transform(chunk_size: int = 1500, chunk_overlap: int = 200) -> Dict[
 
     project_root = Path(__file__).resolve().parents[3]
     input_file = project_root / 'data' / 'raw' / 'diseases_faq.json'
-    output_file = project_root / 'data' / 'transform' / 'faq_chunks.json'
+    output_file = project_root / 'data' / 'vectorDB' / 'faq_chunks.csv'
 
     # 출력 디렉토리 생성
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -66,9 +67,15 @@ def run_faq_transform(chunk_size: int = 1500, chunk_overlap: int = 200) -> Dict[
     )
     chunks = transformer.transform(faq_data)
 
-    # 저장
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump([chunk.to_dict() for chunk in chunks], f, ensure_ascii=False, indent=2)
+    # CSV 저장 (vectorDB)
+    df = pd.DataFrame([
+        {
+            **c.to_dict(),
+            "metadata": json.dumps(c.to_dict()["metadata"], ensure_ascii=False)
+        }
+        for c in chunks
+    ])
+    df.to_csv(output_file, index=False, encoding='utf-8-sig')
 
     # 통계
     stats = transformer.get_statistics(chunks)
@@ -101,13 +108,16 @@ def run_info_transform() -> Dict[str, Any]:
 
     project_root = Path(__file__).resolve().parents[3]
     input_file = project_root / 'data' / 'raw' / 'diseases_info.json'
-    output_chunks = project_root / 'data' / 'transform' / 'info_chunks.json'
-    output_images = project_root / 'data' / 'transform' / 'image_metadata.json'
 
-    # 출력 디렉토리 생성
-    output_chunks.parent.mkdir(parents=True, exist_ok=True)
+    # 출력 경로 변경 (vectorDB / RDB 폴더 분리)
+    vector_output_dir = project_root / 'data' / 'vectorDB'
+    rdb_output_dir = project_root / 'data' / 'RDB'
+    vector_output_dir.mkdir(parents=True, exist_ok=True)
+    rdb_output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 데이터 로드
+    output_chunks = vector_output_dir / 'info_chunks.csv'
+    output_images = rdb_output_dir / 'image_metadata.csv'
+
     with open(input_file, 'r', encoding='utf-8') as f:
         diseases_data = json.load(f)
 
@@ -124,12 +134,19 @@ def run_info_transform() -> Dict[str, Any]:
         all_chunks.extend(chunks)
         all_images.extend(images)
 
-    # 저장
-    with open(output_chunks, 'w', encoding='utf-8') as f:
-        json.dump([chunk.to_dict() for chunk in all_chunks], f, ensure_ascii=False, indent=2)
+    # info_chunks.csv (vectorDB)
+    df_chunks = pd.DataFrame([
+        {
+            **c.to_dict(),
+            "metadata": json.dumps(c.to_dict()["metadata"], ensure_ascii=False)
+        }
+        for c in all_chunks
+    ])
+    df_chunks.to_csv(output_chunks, index=False, encoding='utf-8-sig')
 
-    with open(output_images, 'w', encoding='utf-8') as f:
-        json.dump([img.to_dict() for img in all_images], f, ensure_ascii=False, indent=2)
+    # image_metadata.csv (RDB)
+    df_images = pd.DataFrame([img.to_dict() for img in all_images])
+    df_images.to_csv(output_images, index=False, encoding='utf-8-sig')
 
     elapsed = time.time() - start_time
 

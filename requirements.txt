@@ -17,3 +17,5 @@ psycopg2-binary==2.9.10
 
 # 크롤링
 playwright==1.55.0
+
+pandas==2.2.3
