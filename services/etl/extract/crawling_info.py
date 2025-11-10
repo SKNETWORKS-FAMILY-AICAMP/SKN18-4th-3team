@@ -259,7 +259,7 @@ async def extract_tab_content(page, tab_name):
                     await title_element.click()
                     await page.wait_for_timeout(800)
 
-                # 내용 추출 (텍스트 + 표)
+                # 내용 추출 (텍스트 + 표 + 이미지)
                 item_data = {}
 
                 # 1) 표(table) 먼저 확인 - 첫 번째 열을 키로 사용
@@ -326,17 +326,156 @@ async def extract_tab_content(page, tab_name):
                 if text_content:
                     item_data['text'] = text_content
 
+                # 3) 이미지 정보 추출 (이 섹션에 속한 이미지만)
+                # alt 텍스트는 다음과 같이 활용됨:
+                # - AI 이미지 분석 시 힌트로 제공 (프롬프트에 포함)
+                # - alt가 충분히 상세하면 AI 분석 생략하여 비용 절약 가능
+                # - Vector DB 메타데이터에 포함하여 검색 품질 향상
+                images = await content_element.query_selector_all('img')
+                if images:
+                    image_list = []
+                    for img in images:
+                        src = await img.get_attribute('src')
+                        alt = await img.get_attribute('alt')  # HTML alt 속성 추출
+
+                        if src:
+                            # 상대 경로를 절대 경로로 변환
+                            if src.startswith('/'):
+                                src = f"https://www.mentalhealth.go.kr{src}"
+                            elif not src.startswith('http'):
+                                src = f"https://www.mentalhealth.go.kr/{src}"
+
+                            # 이미지가 테이블 안에 있는지 확인
+                            # location 정보는 transform 시 이미지 분석 전략 결정에 사용
+                            is_in_table = await img.evaluate('''(img) => {
+                                let parent = img.parentElement;
+                                while (parent) {
+                                    if (parent.tagName === 'TABLE') return true;
+                                    if (parent.classList && parent.classList.contains('accordi_con')) break;
+                                    parent = parent.parentElement;
+                                }
+                                return false;
+                            }''')
+
+                            # 이미지 주변의 <strong> 태그에서 제목/캡션 추출
+                            # 이미지 위아래에 있는 strong 태그를 찾아서 제목으로 사용
+                            # div로 감싸져 있으면 그 div 안에서만 검색
+                            caption = await img.evaluate('''(img) => {
+                                let caption = '';
+                                
+                                // 이미지가 div로 감싸져 있는지 확인하고, 가장 가까운 div 컨테이너 찾기
+                                let container = img.parentElement;
+                                if (!container) return '';
+                                
+                                // div로 감싸져 있으면 그 div를 컨테이너로 사용
+                                while (container && container.tagName !== 'DIV' && container.tagName !== 'BODY') {
+                                    container = container.parentElement;
+                                }
+                                
+                                // div 컨테이너를 찾지 못했으면 부모 요소 사용
+                                if (!container || container.tagName === 'BODY') {
+                                    container = img.parentElement;
+                                }
+                                
+                                // 이미지의 바로 위쪽 형제 요소 확인 (최대 2개까지만)
+                                let prevSibling = img.previousElementSibling;
+                                let prevCount = 0;
+                                while (prevSibling && prevCount < 2) {
+                                    // div 컨테이너를 벗어나면 중단
+                                    if (container && !container.contains(prevSibling)) {
+                                        break;
+                                    }
+                                    
+                                    // strong 태그 직접 확인
+                                    if (prevSibling.tagName === 'STRONG') {
+                                        const text = prevSibling.innerText.trim();
+                                        if (text && text.length > 0 && text.length < 100) {
+                                            caption = text;
+                                            break;
+                                        }
+                                    }
+                                    // 이전 형제 요소 내부의 strong 태그 확인 (가장 마지막 것만)
+                                    const strongs = prevSibling.querySelectorAll('strong');
+                                    if (strongs.length > 0) {
+                                        const text = strongs[strongs.length - 1].innerText.trim();
+                                        if (text && text.length > 0 && text.length < 100) {
+                                            caption = text;
+                                            break;
+                                        }
+                                    }
+                                    prevSibling = prevSibling.previousElementSibling;
+                                    prevCount++;
+                                }
+                                
+                                // 위쪽에서 찾지 못했으면 아래쪽 확인 (최대 2개까지만)
+                                if (!caption) {
+                                    let nextSibling = img.nextElementSibling;
+                                    let nextCount = 0;
+                                    while (nextSibling && nextCount < 2) {
+                                        // div 컨테이너를 벗어나면 중단
+                                        if (container && !container.contains(nextSibling)) {
+                                            break;
+                                        }
+                                        
+                                        // strong 태그 직접 확인
+                                        if (nextSibling.tagName === 'STRONG') {
+                                            const text = nextSibling.innerText.trim();
+                                            if (text && text.length > 0 && text.length < 100) {
+                                                caption = text;
+                                                break;
+                                            }
+                                        }
+                                        // 다음 형제 요소 내부의 strong 태그 확인 (가장 첫 번째 것만)
+                                        const strongs = nextSibling.querySelectorAll('strong');
+                                        if (strongs.length > 0) {
+                                            const text = strongs[0].innerText.trim();
+                                            if (text && text.length > 0 && text.length < 100) {
+                                                caption = text;
+                                                break;
+                                            }
+                                        }
+                                        nextSibling = nextSibling.nextElementSibling;
+                                        nextCount++;
+                                    }
+                                }
+                                
+                                return caption;
+                            }''')
+
+                            # alt와 caption이 둘 다 없는 이미지는 제외
+                            alt_text = alt or ''
+                            caption_text = caption or ''
+                            
+                            if alt_text or caption_text:
+                                image_list.append({
+                                    'url': src,
+                                    'alt': alt_text,
+                                    'caption': caption_text,  # 원본 캡션 별도 저장
+                                    'location': 'table' if is_in_table else 'text'
+                                })
+
+                    if image_list:
+                        item_data['images'] = image_list
+
                 # 추출한 제목과 내용을 딕셔너리에 추가
                 if item_data:
-                    # 표가 없으면 텍스트만 저장 (하위 호환성)
-                    if 'tables' not in item_data and 'text' in item_data:
+                    # 표나 이미지가 있으면 dict로, 텍스트만 있으면 단순 문자열로 저장
+                    if 'tables' in item_data or 'images' in item_data:
+                        tab_content[title] = item_data
+                    elif 'text' in item_data:
                         tab_content[title] = item_data['text']
                     else:
                         tab_content[title] = item_data
 
                     text_len = len(item_data.get('text', ''))
                     table_count = len(item_data.get('tables', []))
-                    print(f"    - {title}: {text_len}자" + (f", 표 {table_count}개" if table_count > 0 else ""))
+                    image_count = len(item_data.get('images', []))
+                    info_parts = [f"{text_len}자"]
+                    if table_count > 0:
+                        info_parts.append(f"표 {table_count}개")
+                    if image_count > 0:
+                        info_parts.append(f"이미지 {image_count}개")
+                    print(f"    - {title}: " + ", ".join(info_parts))
             except Exception as e:
                 print(f"  아코디언 항목 추출 중 오류: {e}")
                 continue
@@ -377,6 +516,7 @@ async def extract_disease_detail(page, disease_url):
                 disease_name = name_text.strip()
 
         # 각 탭의 내용 추출 (개요, 진단, 치료, 스스로 돕는 법)
+        # 이미지는 각 섹션 내부에 저장되므로 최상위 '이미지' 배열은 생성하지 않음
         tabs = ['개요', '진단', '치료', '스스로 돕는 법']
 
         for tab_name in tabs:
@@ -386,23 +526,6 @@ async def extract_disease_detail(page, disease_url):
             except Exception as e:
                 print(f"탭 '{tab_name}' 추출 실패: {e}")
                 temp_data[tab_name] = {}
-
-        # 이미지 정보 추출 (URL만 저장)
-        images = await page.query_selector_all('div.accordi_con img')
-        image_urls = []
-        for img in images:
-            src = await img.get_attribute('src')
-            if src:
-                # 상대 경로를 절대 경로로 변환
-                if src.startswith('/'):
-                    src = f"https://www.mentalhealth.go.kr{src}"
-                elif not src.startswith('http'):
-                    src = f"https://www.mentalhealth.go.kr{src}"
-                image_urls.append(src)
-
-        # 이미지 URL 저장
-        if image_urls:
-            temp_data['이미지'] = image_urls
 
     except Exception as e:
         print(f"질환 상세 페이지 추출 중 오류 ({disease_url}): {e}")
