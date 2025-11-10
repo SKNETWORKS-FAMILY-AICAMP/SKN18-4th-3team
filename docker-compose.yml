@@ -4,7 +4,7 @@ services:
     image: pgvector/pgvector:pg18
     container_name: SKN18-4th
     env_file:
-      - .env  
+      - .env
     environment:
       POSTGRES_DB: ${PG_DB}
       POSTGRES_USER: ${PG_USER}
