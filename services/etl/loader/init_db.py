@@ -55,7 +55,7 @@ def get_db_config():
         'user': os.environ['PG_USER'],
         'password': os.environ['PG_PASSWORD'],
         'host': 'localhost',  
-        'port': '5433'
+        'port': os.environ['PG_PORT']
     }
 
 

@@ -172,13 +172,10 @@ class FAQTextSplitter:
         chunk_id = self._generate_chunk_id(question, faq_index, chunk_index)
 
         metadata = {
-            # 청크 식별
             "chunk_id": chunk_id,
-
-            # FAQ 내용
             "keyword": keyword,
-
-            # 청킹 정보
+            "disease_name": keyword,
+            "category": "FAQ",
             "content_type": "faq"
         }
 
