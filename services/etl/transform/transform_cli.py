@@ -106,6 +106,7 @@ def run_info_transform() -> Dict[str, Any]:
 
     # 출력 디렉토리 생성
     output_chunks.parent.mkdir(parents=True, exist_ok=True)
+    output_images.parent.mkdir(parents=True, exist_ok=True) 
 
     # 데이터 로드
     with open(input_file, 'r', encoding='utf-8') as f:
