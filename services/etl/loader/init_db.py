@@ -113,14 +113,10 @@ def drop_tables():
 
     drop_sql = """
     -- 함수 삭제
-    DROP FUNCTION IF EXISTS search_kmbert_similarity(vector, float, int) CASCADE;
-    DROP FUNCTION IF EXISTS search_openai_small_similarity(vector, float, int) CASCADE;
     DROP FUNCTION IF EXISTS search_openai_large_similarity(vector, float, int) CASCADE;
 
     -- 테이블 삭제
     DROP TABLE IF EXISTS image_metadata CASCADE;
-    DROP TABLE IF EXISTS embeddings_kmbert CASCADE;
-    DROP TABLE IF EXISTS embeddings_openai_small CASCADE;
     DROP TABLE IF EXISTS embeddings_openai_large CASCADE;
     """
 
@@ -176,10 +172,7 @@ def create_schema():
             WHERE schemaname = 'public'
             AND tablename IN (
                 'image_metadata',
-                'embeddings_kmbert',
-                'embeddings_openai_small',
-                'embeddings_openai_large',
-                'diagnostic_tests'
+                'embeddings_openai_large'
             )
             ORDER BY tablename;
         """)
@@ -218,8 +211,6 @@ def show_table_info():
         # 각 테이블의 컬럼 정보
         tables = [
             'image_metadata',
-            'embeddings_kmbert',
-            'embeddings_openai_small',
             'embeddings_openai_large',
         ]
 
@@ -300,7 +291,7 @@ def main():
     # 테이블 삭제 (reset 옵션)
     if args.reset:
         confirm = input("\n⚠️  기존 데이터가 모두 삭제됩니다. 계속하시겠습니까? (Yes/no): ")
-        if confirm.lower() != 'y' or 'Y' or 'yes':
+        if confirm.lower() not in ['y', 'yes']:
             print("취소되었습니다.")
             return
         drop_tables()
