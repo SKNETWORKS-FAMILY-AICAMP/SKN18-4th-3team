@@ -1,0 +1,100 @@
+.form-container {
+    background: white;
+    padding: 3rem 2.5rem;
+    border: 3px solid black;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 550px;
+}
+
+.form-container h2 {
+    color: black;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: none;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: black;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border: 2px solid black;
+    border-radius: 50px;
+    font-size: 1rem;
+    background: white;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: black;
+}
+
+.btn {
+    width: 100%;
+    padding: 1rem;
+    background: black;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.btn:hover {
+    background: #333;
+}
+
+.form-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+}
+
+.form-footer a {
+    display: inline-block;
+    width: 100%;
+    padding: 1rem;
+    background: black;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.form-footer a:hover {
+    background: #333;
+}
+
+.errorlist {
+    list-style: none;
+    color: #ef4444;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.helptext {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem;
+}

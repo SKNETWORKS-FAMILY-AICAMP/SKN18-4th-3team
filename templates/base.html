@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}정신건강 챗봇{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header>
+        <a href="{% url 'home' %}" class="logo">MindCare ⚕</a>
+        <nav>
+            {% if user.is_authenticated %}
+                <a href="{% url 'users:logout' %}">로그아웃</a>
+                <span class="profile-icon"></span>
+                <span class="user-info">{{ user.username }}</span>
+            {% else %}
+                <a href="{% url 'users:login' %}" class="login-btn">LOGIN</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
