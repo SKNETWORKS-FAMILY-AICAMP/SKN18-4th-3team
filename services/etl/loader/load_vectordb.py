@@ -2,8 +2,6 @@
 Vector DB 데이터 로더 (임베딩 생성 + 적재)
 
 FAQ/INFO 청크 데이터를 임베딩 후 PostgreSQL Vector DB에 적재합니다.
-- KM-BERT (768차원)
-- OpenAI text-embedding-3-small (1536차원)
 - OpenAI text-embedding-3-large (3072차원)
 """
 
@@ -11,19 +9,11 @@ import json
 import os
 import psycopg2
 from pathlib import Path
-from typing import List, Dict, Any, Literal
+from typing import List, Dict, Any
 from init_db import get_db_config, get_project_root
 from dotenv import load_dotenv
 
-# 임베딩 모델 임포트
-try:
-    from transformers import AutoTokenizer, AutoModel
-    import torch
-    KMBERT_AVAILABLE = True
-except ImportError:
-    KMBERT_AVAILABLE = False
-    print("⚠️  transformers 라이브러리가 설치되지 않았습니다. KM-BERT 임베딩을 사용할 수 없습니다.")
-
+# OpenAI 임포트
 try:
     from openai import OpenAI
     OPENAI_AVAILABLE = True
@@ -33,34 +23,14 @@ except ImportError:
 
 
 class EmbeddingGenerator:
-    """임베딩 생성기"""
+    """임베딩 생성기 (OpenAI Large 전용)"""
 
     def __init__(self):
-        self.kmbert_model = None
-        self.kmbert_tokenizer = None
         self.openai_client = None
 
         # 환경 변수 로드
         project_root = get_project_root()
         load_dotenv(project_root / '.env')
-
-    def load_kmbert(self):
-        """KM-BERT 모델 로드"""
-        if not KMBERT_AVAILABLE:
-            print("❌ KM-BERT를 사용할 수 없습니다.")
-            return False
-
-        try:
-            print("📥 KM-BERT 모델 로드 중...")
-            model_name = "BM-K/KoSimCSE-bert-multitask"
-            self.kmbert_tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self.kmbert_model = AutoModel.from_pretrained(model_name)
-            self.kmbert_model.eval()
-            print("✅ KM-BERT 모델 로드 완료")
-            return True
-        except Exception as e:
-            print(f"❌ KM-BERT 모델 로드 실패: {e}")
-            return False
 
     def load_openai(self):
         """OpenAI 클라이언트 초기화"""
@@ -81,36 +51,13 @@ class EmbeddingGenerator:
             print(f"❌ OpenAI 클라이언트 초기화 실패: {e}")
             return False
 
-    def generate_kmbert_embedding(self, text: str) -> List[float]:
-        """KM-BERT 임베딩 생성 (768차원)"""
-        if not self.kmbert_model or not self.kmbert_tokenizer:
-            raise RuntimeError("KM-BERT 모델이 로드되지 않았습니다.")
-
-        with torch.no_grad():
-            inputs = self.kmbert_tokenizer(
-                text,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-                max_length=512
-            )
-            outputs = self.kmbert_model(**inputs)
-            # [CLS] 토큰의 임베딩 사용
-            embedding = outputs.last_hidden_state[:, 0, :].squeeze().tolist()
-
-        return embedding
-
-    def generate_openai_embedding(
-        self,
-        text: str,
-        model: Literal["text-embedding-3-small", "text-embedding-3-large"]
-    ) -> List[float]:
-        """OpenAI 임베딩 생성"""
+    def generate_openai_embedding(self, text: str) -> List[float]:
+        """OpenAI Large 임베딩 생성 (3072차원)"""
         if not self.openai_client:
             raise RuntimeError("OpenAI 클라이언트가 초기화되지 않았습니다.")
 
         response = self.openai_client.embeddings.create(
-            model=model,
+            model="text-embedding-3-large",
             input=text
         )
         return response.data[0].embedding
@@ -220,17 +167,6 @@ def main():
         print("\n❌ 적재할 데이터가 없습니다.")
         return
 
-    # 사용자에게 임베딩 모델 선택
-    print("\n" + "=" * 60)
-    print("임베딩 모델을 선택하세요:")
-    print("  1. KM-BERT (768차원)")
-    print("  2. OpenAI text-embedding-3-small (1536차원)")
-    print("  3. OpenAI text-embedding-3-large (3072차원)")
-    print("  4. 모두 생성")
-    print("=" * 60)
-
-    choice = input("선택 (1-4): ").strip()
-
     # 임베딩 생성기 초기화
     generator = EmbeddingGenerator()
 
@@ -242,87 +178,32 @@ def main():
         conn = psycopg2.connect(**config)
         print("✅ 데이터베이스 연결 성공")
 
-        # 선택에 따라 임베딩 생성 및 적재
-        if choice in ['1', '4']:
-            # KM-BERT
-            if generator.load_kmbert():
-                print("\n" + "=" * 60)
-                print("🔄 KM-BERT 임베딩 생성 및 적재 중...")
-                print("=" * 60)
+        # OpenAI Large 임베딩 생성 및 적재
+        if generator.load_openai():
+            print("\n" + "=" * 60)
+            print("🔄 OpenAI Large 임베딩 생성 및 적재 중...")
+            print("=" * 60)
 
-                chunks_with_embeddings = []
-                for i, chunk in enumerate(chunks, 1):
-                    metadata = extract_metadata(chunk)
-                    try:
-                        embedding = generator.generate_kmbert_embedding(metadata['content'])
-                        metadata['embedding'] = embedding
-                        chunks_with_embeddings.append(metadata)
+            chunks_with_embeddings = []
+            for i, chunk in enumerate(chunks, 1):
+                metadata = extract_metadata(chunk)
+                try:
+                    embedding = generator.generate_openai_embedding(metadata['content'])
+                    metadata['embedding'] = embedding
+                    chunks_with_embeddings.append(metadata)
 
-                        if i % 100 == 0:
-                            print(f"  진행 중: {i}/{len(chunks)} 청크 처리됨")
+                    if i % 100 == 0:
+                        print(f"  진행 중: {i}/{len(chunks)} 청크 처리됨")
 
-                    except Exception as e:
-                        print(f"⚠️  임베딩 생성 실패 (chunk_id: {metadata['chunk_id']}): {e}")
-                        continue
+                except Exception as e:
+                    print(f"⚠️  임베딩 생성 실패 (chunk_id: {metadata['chunk_id']}): {e}")
+                    continue
 
-                inserted = insert_embeddings(conn, 'embeddings_kmbert', chunks_with_embeddings)
-                print(f"✅ KM-BERT: {inserted}개의 임베딩 삽입 완료")
-
-        if choice in ['2', '4']:
-            # OpenAI Small
-            if generator.load_openai():
-                print("\n" + "=" * 60)
-                print("🔄 OpenAI Small 임베딩 생성 및 적재 중...")
-                print("=" * 60)
-
-                chunks_with_embeddings = []
-                for i, chunk in enumerate(chunks, 1):
-                    metadata = extract_metadata(chunk)
-                    try:
-                        embedding = generator.generate_openai_embedding(
-                            metadata['content'],
-                            "text-embedding-3-small"
-                        )
-                        metadata['embedding'] = embedding
-                        chunks_with_embeddings.append(metadata)
-
-                        if i % 100 == 0:
-                            print(f"  진행 중: {i}/{len(chunks)} 청크 처리됨")
-
-                    except Exception as e:
-                        print(f"⚠️  임베딩 생성 실패 (chunk_id: {metadata['chunk_id']}): {e}")
-                        continue
-
-                inserted = insert_embeddings(conn, 'embeddings_openai_small', chunks_with_embeddings)
-                print(f"✅ OpenAI Small: {inserted}개의 임베딩 삽입 완료")
-
-        if choice in ['3', '4']:
-            # OpenAI Large
-            if generator.load_openai():
-                print("\n" + "=" * 60)
-                print("🔄 OpenAI Large 임베딩 생성 및 적재 중...")
-                print("=" * 60)
-
-                chunks_with_embeddings = []
-                for i, chunk in enumerate(chunks, 1):
-                    metadata = extract_metadata(chunk)
-                    try:
-                        embedding = generator.generate_openai_embedding(
-                            metadata['content'],
-                            "text-embedding-3-large"
-                        )
-                        metadata['embedding'] = embedding
-                        chunks_with_embeddings.append(metadata)
-
-                        if i % 100 == 0:
-                            print(f"  진행 중: {i}/{len(chunks)} 청크 처리됨")
-
-                    except Exception as e:
-                        print(f"⚠️  임베딩 생성 실패 (chunk_id: {metadata['chunk_id']}): {e}")
-                        continue
-
-                inserted = insert_embeddings(conn, 'embeddings_openai_large', chunks_with_embeddings)
-                print(f"✅ OpenAI Large: {inserted}개의 임베딩 삽입 완료")
+            inserted = insert_embeddings(conn, 'embeddings_openai_large', chunks_with_embeddings)
+            print(f"✅ OpenAI Large: {inserted}개의 임베딩 삽입 완료")
+        else:
+            print("❌ OpenAI 클라이언트 초기화에 실패했습니다.")
+            return
 
         print("\n" + "=" * 60)
         print("✅ 모든 작업 완료!")
