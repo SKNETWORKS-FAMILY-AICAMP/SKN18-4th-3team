@@ -1,7 +1,4 @@
 """
-Answer Node
------------
-
 [역할]
 사용자 답변을 현재 slot에 저장
 
@@ -25,7 +22,6 @@ Answer Node
 3차: slot_data = {"slot_1": "우울해요", "slot_2": "2주", "slot_3": "심각"}, slot_status = {"slot_1": True, "slot_2": True, "slot_3": True, ...}
 """
 
-
 def answer_node(state):
     """
     사용자 답변을 받아 slot에 저장하는 노드
@@ -41,7 +37,7 @@ def answer_node(state):
         slot_status[current_slot] = True
 
     return {
-        "user_question": user_answer,  # state_check로 전달용
-        "slot_data": slot_data,
-        "slot_status": slot_status,
+        "user_question": user_answer,  # state_check_node에서 사용 (입력으로 전달)
+        "slot_data": slot_data,        # 업데이트된 slot 데이터 (누적)       
+        "slot_status": slot_status,    # 업데이트된 slot 상태
     }
