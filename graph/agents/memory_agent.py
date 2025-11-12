@@ -37,29 +37,15 @@ from graph.nodes.slot_memory_node import slot_memory_node
 
 def memory_agent(state):
     """
-    memory_agent는 상담 도중 모인 정보를 보기 좋게 정리하는 간단한 전달자 역할을 합니다.
-
-    우리가 하는 일은 아래 3단계로 끝입니다.
-    1) 이미 다른 곳에서 모아 둔 slot 정보를 그대로 받아옵니다.
-    2) 그 정보를 `slot_memory_node`에 넘겨 정리된 문장으로 바꿔 달라고 부탁합니다.
-    3) 정리된 결과를 그대로 다음 단계(extract, chat LLM)에서 쓰도록 돌려줍니다.
-
+    Slot 데이터를 통합하는 에이전트
+    
     Args:
-        state (GraphState): 상담에서 쌓인 정보를 담은 상자입니다.
-            - state["slot_data"]: 질문별 사용자 답변 모음 (예: 이름, 증상, 기간 등)
-            - state["slot_status"]: 모든 질문에 답했는지를 표시한 값
-
+        state: GraphState - slot_data, slot_status를 포함한 상태
+        
     Returns:
-        dict: 다음 단계에서 바로 사용할 수 있는 깔끔한 정보 묶음입니다.
-            - "slot_data": 원래 slot 정보 그대로
-            - "counseling_context": slot 정보를 한 문서처럼 이어 붙인 문장
-            - "all_slots_filled": 모든 slot이 채워졌는지 여부(True 또는 False)
+        dict: slot_data, counseling_context, all_slots_filled를 포함한 상태
     """
-
-    # 실제 정리(문장 만들기)는 slot_memory_node에서 처리합니다.
     result = slot_memory_node(state)
-
-    # 정리된 결과를 그대로 돌려줍니다.
     return result
 
 
