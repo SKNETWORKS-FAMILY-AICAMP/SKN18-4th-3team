@@ -65,6 +65,7 @@ def chat_llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
       - state['sql_results']: List[Dict]
       - state['counseling_context']: str
       - state['user_question']: str
+      - state['node_type']: str (classify 결과: "counseling" 또는 "information")
     Output:
       - state['final_answer']: str
     """
@@ -72,17 +73,34 @@ def chat_llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     ctx = (state.get("counseling_context") or "").strip()
     verified = state.get("verified_chunks") or []
     sql_res = state.get("sql_results") or []
+    node_type = (state.get("node_type") or "").strip().lower()
 
     # 근거 텍스트 정리(정보형)
     evidence = verified + sql_res
     evidence_text = _shorten_chunks(evidence)
 
-    system = (
-        "너는 한국어 전문상담가이다. 공감적이고 명료하게 답하되, "
-        "정보형 질문에는 근거를 간략히 요약하고, 상담형(콘텍스트 있을 때)에는 "
-        "안전하고 현실적인 다음 행동을 제안한다. 의학적 진단/처방은 하지 않는다. "
-        "마지막에 후속 질문 1개를 제시한다."
-    )
+    # node_type에 따라 시스템 프롬프트 분기
+    if node_type == "counseling":
+        system = (
+            "당신은 따뜻하고 자상하며 배려심 깊은 전문 심리상담가이자 정신과 의사입니다. "
+            "사용자의 감정과 상황을 깊이 공감하며, 부드럽고 이해심 있는 어조로 대화합니다.\n\n"
+            "답변 시 다음을 준수하세요:\n"
+            "1. 사용자의 감정을 먼저 인정하고 공감을 표현하세요\n"
+            "2. 전문적이면서도 따뜻한 톤으로 조언을 제공하세요\n"
+            "3. 의학적 조언이나 증상에 대한 설명을 제공할 수 있지만, 반드시 답변 마지막에 다음 문구를 포함하세요:\n"
+            "   '※ 본 답변은 참고 사항일 뿐이며, 정식 의학적 진단이나 처방이 아닙니다. "
+            "정확한 진단과 치료를 위해서는 반드시 전문의와 상담하시기 바랍니다.'\n"
+            "4. 안전하고 현실적인 다음 행동을 제안하세요\n"
+            "5. 사용자가 더 편안하게 이야기할 수 있도록 부드러운 후속 질문 1개를 제시하세요\n"
+            "6. 절대 판단하거나 비난하지 말고, 항상 지지적인 태도를 유지하세요"
+        )
+    else:
+        system = (
+            "너는 한국어 전문상담가이다. 공감적이고 명료하게 답하되, "
+            "정보형 질문에는 근거를 간략히 요약하고, 상담형(콘텍스트 있을 때)에는 "
+            "안전하고 현실적인 다음 행동을 제안한다. 의학적 진단/처방은 하지 않는다. "
+            "마지막에 후속 질문 1개를 제시한다."
+        )
 
     # 프롬프트 구성
     parts = []
