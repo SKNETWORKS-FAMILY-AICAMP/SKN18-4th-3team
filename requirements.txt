@@ -17,3 +17,7 @@ psycopg2-binary==2.9.10
 
 # 크롤링
 playwright==1.55.0
+
+# Hugging Face Transformers – KoBERT/멀티모달 모델 로딩 및 토큰화
+transformers==4.57.1
+torch==2.9.0
