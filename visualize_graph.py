@@ -1,43 +1,24 @@
 """
-build_graph.py
---------------
-- 전체 LangGraph 구조를 초기화하고, 각 Agent들을 연결하여 대화 플로우를 구성하는 진입점(entrypoint).
+그래프 시각화 스크립트
 """
+
+import sys
+import os
+
+# 프로젝트 루트를 Python 경로에 추가
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, Optional, List, Dict
 
-# Nodes import
-from graph.nodes.classify_node import classify_node
-from graph.nodes.search_vectordb_node import search_vectordb_node
-from graph.nodes.eval_node import eval_node
-from graph.nodes.sql_search_node import sql_search_node
-from graph.nodes.chat_llm_node import chat_llm_node
-from graph.nodes.state_check_node import state_check_node
-from graph.nodes.question_node import question_node
-from graph.nodes.answer_node import answer_node
-from graph.nodes.slot_memory_node import slot_memory_node
-from graph.nodes.extract_node import extract_node
-
-# Agents import
-from graph.agents.classify_agent import route_after_classify
-from graph.agents.state_check_agent import route_after_state_check
-from graph.agents.eval_agent import route_after_eval
-from graph.agents.memory_agent import route_after_memory
-
 
 # State 정의
 class GraphState(TypedDict):
-    # 공통
     user_question: str
-    
-    # 정보형 질문 관련
     question_type: Optional[str]
     retrieved_chunks: Optional[List[Dict]]
     verified_chunks: Optional[List[Dict]]
     related_images: Optional[List[str]]
-    
-    # 상담형 질문 관련
     slot_status: Optional[Dict[str, bool]]
     slot_data: Optional[Dict[str, str]]
     current_slot: Optional[str]
@@ -47,39 +28,87 @@ class GraphState(TypedDict):
     counseling_context: Optional[str]
     all_slots_filled: Optional[bool]
     extracted_symptoms: Optional[Dict]
-    
-    # 최종 답변
     final_answer: Optional[str]
+
+
+# 더미 노드 함수들
+def classify_node(state):
+    return state
+
+def search_vectordb_node(state):
+    return state
+
+def eval_node(state):
+    return state
+
+def sql_search_node(state):
+    return state
+
+def chat_llm_node(state):
+    return state
+
+def state_check_node(state):
+    return state
+
+def question_node(state):
+    return state
+
+def answer_node(state):
+    return state
+
+def slot_memory_node(state):
+    return state
+
+def extract_node(state):
+    return state
+
+
+# 라우팅 함수들
+def route_after_classify(state):
+    question_type = state.get("question_type", "information")
+    if question_type == "information":
+        return "search_vectordb"
+    elif question_type == "counseling":
+        return "state_check"
+    else:
+        return "__end__"
+
+def route_after_eval(state):
+    verified_chunks = state.get("verified_chunks", [])
+    if not verified_chunks:
+        return "__end__"
+    else:
+        return "sql_search"
+
+def route_after_state_check(state):
+    slot_status = state.get("slot_status", {})
+    all_filled = all(slot_status.values()) if slot_status else False
+    return "slot_memory" if all_filled else "question"
+
+def route_after_memory(state):
+    all_slots_filled = state.get("all_slots_filled", False)
+    return "extract" if all_slots_filled else "state_check"
 
 
 def build_graph():
     """
     전체 그래프를 구성하는 함수
     """
-    # StateGraph 초기화
     workflow = StateGraph(GraphState)
     
-    # ===== 노드 추가 =====
-    # 1. 질문 분류
+    # 노드 추가
     workflow.add_node("classify", classify_node)
-    
-    # 2. 정보형 질문 플로우
     workflow.add_node("search_vectordb", search_vectordb_node)
     workflow.add_node("eval", eval_node)
     workflow.add_node("sql_search", sql_search_node)
-    
-    # 3. 상담형 질문 플로우
     workflow.add_node("state_check", state_check_node)
     workflow.add_node("question", question_node)
     workflow.add_node("answer", answer_node)
     workflow.add_node("slot_memory", slot_memory_node)
     workflow.add_node("extract", extract_node)
-    
-    # 4. 공통 최종 답변
     workflow.add_node("chat_llm", chat_llm_node)
     
-    # ===== 엣지 추가 =====
-    # 시작점
+    # 엣지 추가
     workflow.set_entry_point("classify")
     
     # classify 후 라우팅 (분류 불가능한 질문은 END로)
@@ -125,40 +154,39 @@ def build_graph():
     workflow.add_edge("slot_memory", "chat_llm")
     workflow.add_edge("extract", "search_vectordb")
     # extract에서 chat_llm으로 가는 화살표 제거 (chat_llm은 sql_search, eval, slot_memory에서만 받음)
-    
-    # 최종 답변 후 종료
     workflow.add_edge("chat_llm", END)
     
-    # 그래프 컴파일
-    app = workflow.compile()
-    
-    return app
+    return workflow.compile()
 
 
 if __name__ == "__main__":
-    """
-    그래프 시각화 테스트
-    """
+    print("=" * 60)
     print("그래프 빌드 중...")
+    print("=" * 60)
+    
     app = build_graph()
-    print("그래프 빌드 완료!")
+    print("✓ 그래프 빌드 완료!\n")
     
-    # 그래프 구조 출력
+    # Mermaid 다이어그램 출력
     try:
-        # Mermaid 다이어그램으로 시각화
-        print("\n=== 그래프 구조 (Mermaid) ===")
-        print(app.get_graph().draw_mermaid())
+        print("=" * 60)
+        print("그래프 구조 (Mermaid 다이어그램)")
+        print("=" * 60)
+        mermaid = app.get_graph().draw_mermaid()
+        print(mermaid)
+        print("\n")
     except Exception as e:
-        print(f"시각화 오류: {e}")
+        print(f"Mermaid 다이어그램 생성 실패: {e}\n")
     
-    # PNG로 저장 (graphviz 설치 필요)
+    # PNG 저장 시도
     try:
-        from IPython.display import Image
-        print("\n그래프를 PNG로 저장 중...")
+        print("=" * 60)
+        print("PNG 파일로 저장 시도...")
+        print("=" * 60)
         img = app.get_graph().draw_mermaid_png()
         with open("graph_structure.png", "wb") as f:
             f.write(img)
-        print("graph_structure.png 파일로 저장 완료!")
+        print("✓ graph_structure.png 파일로 저장 완료!")
     except Exception as e:
-        print(f"PNG 저장 실패: {e}")
-        print("graphviz 설치가 필요할 수 있습니다.")
+        print(f"✗ PNG 저장 실패: {e}")
+        print("  (graphviz 또는 관련 패키지 설치가 필요할 수 있습니다)")
