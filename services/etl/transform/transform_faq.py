@@ -172,13 +172,10 @@ class FAQTextSplitter:
         chunk_id = self._generate_chunk_id(question, faq_index, chunk_index)
 
         metadata = {
-            # 청크 식별
             "chunk_id": chunk_id,
-
-            # FAQ 내용
             "keyword": keyword,
-
-            # 청킹 정보
+            "disease_name": keyword,
+            "category": "FAQ",
             "content_type": "faq"
         }
 
@@ -278,7 +275,7 @@ def main(chunk_size: int = 1500, chunk_overlap: int = 200):
     """FAQ Transform 실행"""
     project_root = Path(__file__).resolve().parents[3]
     input_file = project_root / 'data' / 'raw' / 'diseases_faq.json'
-    output_file = project_root / 'data' / 'transform' / 'faq_chunks.json'
+    output_file = project_root / 'data' / 'vector_db' / 'faq_chunks.json'
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
