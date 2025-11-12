@@ -1,7 +1,4 @@
 """
-State Check Node
-----------------
-
 [역할]
 사용자 입력에서 정보를 추출하여 slot에 저장
 
@@ -25,6 +22,7 @@ State Check Node
 - current_slot: 다음 미충족 slot 번호
 """
 
+from graph.agents.state_check_agent import extract_slot_info
 
 def state_check_node(state):
     """
@@ -33,7 +31,7 @@ def state_check_node(state):
     user_input = state.get("user_question", "")
     initial_question = state.get("initial_question")
     
-    # 최초 질문 보관 (첫 실행 시에만)
+    # 최초 질문 보관 (첫 실행 시에만) -> 이후 loop에서는 initial_question가 계속 유지됨
     if not initial_question:
         initial_question = user_input
     
@@ -49,27 +47,25 @@ def state_check_node(state):
             "slot_7": False,
         },
     )
+    # 예: {"slot_1": "우울하고 불안해요", } 형태로 저장
     slot_data = state.get("slot_data", {})
 
-    # TODO: LLM을 사용하여 사용자 입력에서 slot 정보 추출
-    # 추출된 정보가 있으면:
-    #   - slot_data[slot_num] = 추출된 정보
-    #   - slot_status[slot_num] = True
-    # 
-    # 예시 코드:
-    # extracted_info = _extract_slot_info(user_input, slot_status)
-    # for slot_num, info in extracted_info.items():
-    #     if info:
-    #         slot_data[slot_num] = info
-    #         slot_status[slot_num] = True
+    # LLM을 사용하여 사용자 입력에서 slot 정보 추출
+    extracted_info = extract_slot_info(user_input, slot_status)
 
-    # 다음 미충족 slot 찾기
+    for slot_num, info in extracted_info.items():
+        if info:
+            slot_data[slot_num] = info
+            slot_status[slot_num] = True
+
+    # 다음 미충족 slot 찾기(slot_1부터 확인)
     current_slot = None
     for slot_num, is_filled in slot_status.items():
         if not is_filled:
             current_slot = slot_num
             break
 
+    # 업데이트 상태 반환
     return {
         "initial_question": initial_question,
         "slot_status": slot_status,
