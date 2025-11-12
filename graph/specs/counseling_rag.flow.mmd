@@ -1,0 +1,21 @@
+flowchart TD
+  %% Entry
+  classify -->|information| search_vectordb
+  classify -->|counseling| state_check
+  classify -->|else| END
+
+  %% 정보형
+  search_vectordb --> eval
+  eval -->|verified 있음| sql_search
+  eval -->|verified 없음| END
+  eval --> chat_llm
+  sql_search --> chat_llm
+
+  %% 상담형 루프
+  state_check -->|미충족| question --> answer --> state_check
+  state_check -->|모두충족| slot_memory
+  slot_memory --> extract --> search_vectordb
+  slot_memory --> chat_llm
+
+  %% 종료
+  chat_llm --> END

@@ -24,19 +24,102 @@ Chat LLM Node
 [다음 노드]
 - 종료 (최종 노드)
 """
+"""
+chat_llm_node.py
+- 최종 답변 생성 노드
+- 입력: verified_chunks(정보형 근거), counseling_context(상담 요약) 등
+- 출력: final_answer (전문상담가 톤, 근거요약 + 후속질문 1개)
+"""
 
-def chat_llm_node(state):
+from typing import Dict, Any, List
+
+# ▼ OpenAI SDK 사용(필요시 프로젝트 래퍼로 교체)
+try:
+    from openai import OpenAI
+    _client = OpenAI()
+except Exception:
+    _client = None
+
+def _shorten_chunks(chunks: List[Dict[str, Any]], max_chars=700) -> str:
+    if not chunks:
+        return ""
+    acc = []
+    remain = max_chars
+    for i, ch in enumerate(chunks, 1):
+        txt = (ch.get("content") or "").strip().replace("\n", " ")
+        if not txt:
+            continue
+        piece = f"[{i}] {txt}"
+        if len(piece) > remain:
+            piece = piece[: max(0, remain - 3)] + "..."
+        acc.append(piece)
+        remain -= len(piece)
+        if remain <= 0:
+            break
+    return "\n".join(acc)
+
+def chat_llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
-    최종 답변을 생성하는 노드
+    Inputs (옵션):
+      - state['verified_chunks']: List[Dict]
+      - state['sql_results']: List[Dict]
+      - state['counseling_context']: str
+      - state['user_question']: str
+    Output:
+      - state['final_answer']: str
     """
-    user_question = state.get("user_question", "")
-    verified_chunks = state.get("verified_chunks", [])
-    related_images = state.get("related_images", [])
-    extracted_symptoms = state.get("extracted_symptoms", {})
-    
-    # TODO: LLM을 사용하여 최종 답변 생성
-    final_answer = ""
-    
-    return {
-        "final_answer": final_answer
-    }
+    user_q = (state.get("user_question") or "").strip()
+    ctx = (state.get("counseling_context") or "").strip()
+    verified = state.get("verified_chunks") or []
+    sql_res = state.get("sql_results") or []
+
+    # 근거 텍스트 정리(정보형)
+    evidence = verified + sql_res
+    evidence_text = _shorten_chunks(evidence)
+
+    system = (
+        "너는 한국어 전문상담가이다. 공감적이고 명료하게 답하되, "
+        "정보형 질문에는 근거를 간략히 요약하고, 상담형(콘텍스트 있을 때)에는 "
+        "안전하고 현실적인 다음 행동을 제안한다. 의학적 진단/처방은 하지 않는다. "
+        "마지막에 후속 질문 1개를 제시한다."
+    )
+
+    # 프롬프트 구성
+    parts = []
+    if user_q:
+        parts.append(f"[사용자 질문]\n{user_q}")
+    if ctx:
+        parts.append(f"[상담 콘텍스트]\n{ctx}")
+    if evidence_text:
+        parts.append(f"[참고 근거]\n{evidence_text}")
+    prompt = "\n\n".join(parts).strip() or "사용자 질문이 비어 있습니다."
+
+    # LLM 존재하지 않으면 안전한 폴백
+    if _client is None:
+        fallback = (
+            "요청을 이해했어요. 현재 모델 연결이 없어 일반 가이드를 드립니다.\n\n"
+            f"{('- 상담 콘텍스트 요약 존재\n' if ctx else '')}"
+            f"{('- 정보 근거가 일부 확보되었습니다.\n' if evidence_text else '')}"
+            "다음으로 어떤 점이 가장 궁금하신가요?"
+        )
+        state["final_answer"] = fallback
+        return state
+
+    try:
+        resp = _client.chat.completions.create(
+            model="gpt-5-nano",
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.2,
+        )
+        answer = resp.choices[0].message.content.strip()
+    except Exception as e:
+        answer = (
+            "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.\n"
+            f"(internal: {e})"
+        )
+
+    state["final_answer"] = answer
+    return state
