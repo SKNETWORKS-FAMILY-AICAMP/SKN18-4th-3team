@@ -48,7 +48,7 @@ def run_faq_transform(chunk_size: int = 1500, chunk_overlap: int = 200) -> Dict[
 
     project_root = Path(__file__).resolve().parents[3]
     input_file = project_root / 'data' / 'raw' / 'diseases_faq.json'
-    output_file = project_root / 'data' / 'transform' / 'faq_chunks.json'
+    output_file = project_root / 'data' / 'vector_db' / 'faq_chunks.json'
 
     # 출력 디렉토리 생성
     output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -101,11 +101,12 @@ def run_info_transform() -> Dict[str, Any]:
 
     project_root = Path(__file__).resolve().parents[3]
     input_file = project_root / 'data' / 'raw' / 'diseases_info.json'
-    output_chunks = project_root / 'data' / 'transform' / 'info_chunks.json'
-    output_images = project_root / 'data' / 'transform' / 'image_metadata.json'
+    output_chunks = project_root / 'data' / 'vector_db' / 'info_chunks.json'
+    output_images = project_root / 'data' / 'rdb' / 'image_metadata.json'
 
     # 출력 디렉토리 생성
     output_chunks.parent.mkdir(parents=True, exist_ok=True)
+    output_images.parent.mkdir(parents=True, exist_ok=True) 
 
     # 데이터 로드
     with open(input_file, 'r', encoding='utf-8') as f:
