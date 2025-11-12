@@ -38,7 +38,7 @@ dist/
 *.egg-info/
 
 # 데이터 폴더
-data/
+# data/
 
 # Windows
 Thumbs.db

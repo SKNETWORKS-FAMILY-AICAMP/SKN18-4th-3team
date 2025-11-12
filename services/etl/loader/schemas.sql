@@ -118,8 +118,5 @@ DO $$
 BEGIN
     RAISE NOTICE '데이터베이스 초기화 완료!';
     RAISE NOTICE '   - image_metadata: 이미지 메타데이터';
-    RAISE NOTICE '   - embeddings_kmbert: KM-BERT (768차원)';
-    RAISE NOTICE '   - embeddings_openai_small: OpenAI Small (1536차원)';
     RAISE NOTICE '   - embeddings_openai_large: OpenAI Large (3072차원)';
-    RAISE NOTICE '   - diagnostic_tests: 진단 검사 데이터';
 END $$;
