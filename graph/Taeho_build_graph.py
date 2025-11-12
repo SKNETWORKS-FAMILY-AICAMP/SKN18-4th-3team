@@ -1,6 +1,10 @@
 from pathlib import Path
 import yaml
 from langgraph.graph import StateGraph, END
+from dotenv import load_dotenv
+
+# .env 파일 로드 (독립 실행 시 필요)
+load_dotenv()
 
 # ─────────────────────────────────────────────────────────────
 # 경로
