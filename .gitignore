@@ -339,6 +339,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # Data
-data/*
+# data/*
 
 # End of https://www.toptal.com/developers/gitignore/api/python,react,django,macos,windows
