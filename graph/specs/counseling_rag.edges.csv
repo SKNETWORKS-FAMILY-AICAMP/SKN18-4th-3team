@@ -1,0 +1,17 @@
+from,to,condition,notes
+classify,search_vectordb,question_type=="information",
+classify,state_check,question_type=="counseling",
+classify,END,else,분류 불가시 종료
+search_vectordb,eval,,
+eval,sql_search,verified_chunks not empty,
+eval,END,verified_chunks empty,
+eval,chat_llm,always,fanout
+sql_search,chat_llm,,
+state_check,question,all_slots_filled==false,
+state_check,slot_memory,all_slots_filled==true,
+question,answer,,
+answer,state_check,,
+slot_memory,extract,,
+slot_memory,chat_llm,,
+extract,search_vectordb,,
+chat_llm,END,,
