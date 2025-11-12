@@ -49,26 +49,4 @@ def memory_agent(state):
     return result
 
 
-def route_after_memory(state):
-    """
-    메모리 저장 후 다음 노드를 결정하는 라우팅 함수
-    
-    ※ 주의: 이 함수는 실제로 사용되지 않음
-    ※ build_graph.py에서 직접 엣지로 연결됨
-    
-    Args:
-        state: GraphState - all_slots_filled를 포함한 상태
-        
-    Returns:
-        str: 다음 노드 이름 (이론상)
-            - "extract": 모든 slot 충족 (정상 케이스)
-            - "state_check": slot 미충족 (예외 케이스)
-    """
-    all_slots_filled = state.get("all_slots_filled", False)
-    
-    if all_slots_filled:
-        # 정상: 증상 추출로 이동
-        return "extract"
-    else:
-        # 예외: slot 재확인 (발생하지 않아야 함)
-        return "state_check"
+# memory_agent는 조건부 분기 없이 extract_node/chat_llm 노드로 통합된 전체 Text를 보냄

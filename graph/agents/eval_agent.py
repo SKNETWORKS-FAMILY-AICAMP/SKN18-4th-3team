@@ -17,8 +17,8 @@ eval에서 verified_chunks를 두 방향으로 동시 전달:
 
 2. verified_chunks 있음 (1개 이상)
 → sql_search 노드 (조건부 엣지)
-→ 메타데이터로 RDB에서 관련 이미지 검색
 
+→ 메타데이터로 RDB에서 관련 이미지 검색
 동시에 eval → chat_llm (직접 엣지)
 → 검증된 chunk 직접 전달
 

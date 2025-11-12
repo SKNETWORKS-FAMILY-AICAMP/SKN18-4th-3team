@@ -14,11 +14,17 @@ from typing import TypedDict, Optional, List, Dict
 
 # State 정의
 class GraphState(TypedDict):
+    # 공통
     user_question: str
+    initial_question: Optional[str]  # 최초 질문 보관용
+    
+    # 정보형 질문 관련
     question_type: Optional[str]
     retrieved_chunks: Optional[List[Dict]]
     verified_chunks: Optional[List[Dict]]
     related_images: Optional[List[str]]
+    
+    # 상담형 질문 관련
     slot_status: Optional[Dict[str, bool]]
     slot_data: Optional[Dict[str, str]]
     current_slot: Optional[str]
@@ -28,6 +34,8 @@ class GraphState(TypedDict):
     counseling_context: Optional[str]
     all_slots_filled: Optional[bool]
     extracted_symptoms: Optional[Dict]
+    
+    # 최종 답변
     final_answer: Optional[str]
 
 
@@ -84,10 +92,6 @@ def route_after_state_check(state):
     slot_status = state.get("slot_status", {})
     all_filled = all(slot_status.values()) if slot_status else False
     return "slot_memory" if all_filled else "question"
-
-def route_after_memory(state):
-    all_slots_filled = state.get("all_slots_filled", False)
-    return "extract" if all_slots_filled else "state_check"
 
 
 def build_graph():

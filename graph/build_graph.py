@@ -23,13 +23,13 @@ from graph.nodes.extract_node import extract_node
 from graph.agents.classify_agent import route_after_classify
 from graph.agents.state_check_agent import route_after_state_check
 from graph.agents.eval_agent import route_after_eval
-from graph.agents.memory_agent import route_after_memory
 
 
 # State 정의
 class GraphState(TypedDict):
     # 공통
     user_question: str
+    initial_question: Optional[str]  # 최초 질문 보관용
     
     # 정보형 질문 관련
     question_type: Optional[str]

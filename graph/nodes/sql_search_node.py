@@ -4,8 +4,8 @@ SQL Search Node
 
 [기능 설명]
 - 검증된 chunk의 메타데이터를 사용하여 RDB에서 관련 이미지 추출
-- 문서 ID, 페이지 번호 등의 메타데이터로 이미지 경로 조회
-- 이미지 URL 또는 경로를 반환
+- 문서 ID, 페이지 번호 등의 메타데이터로 이미지 조회
+- 이미지 URL 반환
 
 [입력 State]
 - verified_chunks: list[dict] - 검증된 chunk 리스트
@@ -14,9 +14,6 @@ SQL Search Node
 [출력 State]
 - verified_chunks: list[dict] - 검증된 chunk (전달)
 - related_images: list[str] - 관련 이미지 경로/URL 리스트
-
-[다음 노드]
-- chat_llm_node
 """
 
 def sql_search_node(state):
