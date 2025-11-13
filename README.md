@@ -81,12 +81,12 @@ DBeaver 또는 다른 데이터베이스 클라이언트에서 연결 설정을 
 **실행:**
 
 ```bash
-python services/etl/extract/extract_cli.py
+python -m rag.services.etl.extract.extract_cli
 ```
 
 **결과 확인:**
 
-- `data/raw/` 디렉토리에 크롤링된 데이터 파일 저장 확인
+- `rag/data/raw/` 디렉토리에 크롤링된 데이터 파일 저장 확인
 
 ---
 
@@ -95,6 +95,7 @@ python services/etl/extract/extract_cli.py
 **처리 내용:**
 
 - LangChain splitter를 이용한 청킹 진행
+- FAQ/질병 정보 청킹 기본값: `chunk_size=1500`, `chunk_overlap=200` (약 1,500자 청크, 200자 오버랩)
 - 자가진단테스트/참고문헌 데이터 삭제
 - 테이블을 텍스트로 전환
 - 이미지 메타데이터 생성
@@ -103,7 +104,7 @@ python services/etl/extract/extract_cli.py
 **실행:**
 
 ```bash
-python services/etl/transform/transform_cli.py
+python -m rag.services.etl.transform.transform_cli
 ```
 
 ---
@@ -118,7 +119,7 @@ python services/etl/transform/transform_cli.py
 #### 3.1. 데이터베이스 테이블 생성
 
 ```bash
-python services/etl/loader/init_db.py
+python -m rag.services.etl.loader.init_db
 ```
 
 **옵션:**
@@ -129,13 +130,13 @@ python services/etl/loader/init_db.py
 #### 3.2. 이미지 RDB 적재
 
 ```bash
-python services/etl/loader/load_rdb.py
+python -m rag.services.etl.loader.load_rdb
 ```
 
 #### 3.3. Vector DB 적재
 
 ```bash
-python services/etl/loader/load_vectordb.py
+python -m rag.services.etl.loader.load_vectordb
 ```
 
 ---
