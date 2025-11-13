@@ -16,6 +16,8 @@ from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass, asdict
 import hashlib
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 
 # ==============================
 # 데이터 구조
@@ -332,11 +334,39 @@ class DataFilter:
 class DiseaseDataTransformer:
     """질병 데이터를 Vector DB + RDB 형식으로 변환"""
 
-    def __init__(self):
+    def __init__(
+        self,
+        chunk_size: int = 1500,
+        chunk_overlap: int = 200,
+        separators: Optional[List[str]] = None
+    ):
         """Transform 초기화 (AI 분석 없음, alt 텍스트 사용)"""
         self.image_processor = TableImageProcessor()
         self.image_extractor = ImageExtractor()
         self.data_filter = DataFilter()
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+        if separators is None:
+            separators = [
+                "\n\n",
+                "\n",
+                ". ",
+                "! ",
+                "? ",
+                "• ",
+                "♦ ",
+                " ",
+                "",
+            ]
+
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap,
+            separators=separators,
+            length_function=len,
+            is_separator_regex=False,
+        )
 
     def transform_disease_entry(
         self,
@@ -372,6 +402,8 @@ class DiseaseDataTransformer:
             )
             vector_chunks.extend(chunks)
             all_image_metadata.extend(images)
+
+        vector_chunks = self._apply_text_splitter(vector_chunks, all_image_metadata)
 
         return vector_chunks, all_image_metadata
 
@@ -583,6 +615,72 @@ class DiseaseDataTransformer:
         hash_digest = hashlib.md5(hash_input.encode()).hexdigest()[:12]
         return f"chunk_{hash_digest}"
 
+    def _apply_text_splitter(
+        self,
+        chunks: List[VectorChunk],
+        image_metadata: List[ImageMetadata]
+    ) -> List[VectorChunk]:
+        """생성된 청크에 텍스트 스플리터 적용"""
+        if not chunks:
+            return chunks
+
+        # 원본 청크 ID와 이미지 메타데이터 매핑
+        image_lookup: Dict[str, List[ImageMetadata]] = {}
+        for img in image_metadata:
+            if img.related_chunk_id:
+                image_lookup.setdefault(img.related_chunk_id, []).append(img)
+
+        splitted_chunks: List[VectorChunk] = []
+
+        for chunk in chunks:
+            content = chunk.content.strip()
+            if not content:
+                continue
+
+            segments = self.text_splitter.split_text(content)
+
+            if len(segments) == 1:
+                # 단일 세그먼트면 원본 청크 유지 (필요 시 정제된 텍스트로 대체)
+                if segments[0] != chunk.content:
+                    chunk = VectorChunk(
+                        chunk_id=chunk.chunk_id,
+                        content=segments[0],
+                        metadata=dict(chunk.metadata)
+                    )
+                splitted_chunks.append(chunk)
+                continue
+
+            base_chunk_id = chunk.chunk_id
+            has_visual = bool(chunk.metadata.get("has_visual"))
+            related_images = image_lookup.get(base_chunk_id, [])
+
+            total_segments = len(segments)
+            for idx, segment in enumerate(segments):
+                new_chunk_id = f"{base_chunk_id}_{idx + 1}"
+                new_metadata = dict(chunk.metadata)
+                new_metadata["chunk_id"] = new_chunk_id
+                new_metadata["parent_chunk_id"] = base_chunk_id
+                new_metadata["chunk_piece_index"] = idx
+                new_metadata["chunk_piece_count"] = total_segments
+
+                if idx > 0 and has_visual:
+                    new_metadata["has_visual"] = False
+
+                splitted_chunks.append(
+                    VectorChunk(
+                        chunk_id=new_chunk_id,
+                        content=segment,
+                        metadata=new_metadata
+                    )
+                )
+
+            if related_images:
+                target_chunk_id = f"{base_chunk_id}_1"
+                for img in related_images:
+                    img.related_chunk_id = target_chunk_id
+
+        return splitted_chunks
+
     def _merge_duplicate_images(
         self,
         table_images: List[ImageMetadata],
@@ -710,6 +808,7 @@ def main():
     print(f"   - 출력 위치:")
     print(f"     • {output_chunks}")
     print(f"     • {output_images}")
+    print(f"   - 청크 설정: size={transformer.chunk_size}, overlap={transformer.chunk_overlap}")
 
     # 통계 출력
     images_with_alt = sum(1 for img in all_images if not img.alt_text.startswith("[이미지 설명 필요"))
