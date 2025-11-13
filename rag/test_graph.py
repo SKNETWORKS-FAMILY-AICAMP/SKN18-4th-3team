@@ -5,19 +5,19 @@
 - 각 노드 실행 상태 출력
 """
 
-from graph.nodes.classify_node import classify_node
-from graph.nodes.state_check_node import state_check_node
-from graph.nodes.question_node import question_node
-from graph.nodes.answer_node import answer_node
-from graph.nodes.slot_memory_node import slot_memory_node
-from graph.nodes.extract_node import extract_node
-from graph.nodes.search_vectordb_node import search_vectordb_node
-from graph.nodes.eval_node import eval_node
-from graph.nodes.sql_search_node import sql_search_node
-from graph.nodes.chat_llm_node import chat_llm_node
-from graph.agents.classify_agent import route_after_classify
-from graph.agents.state_check_agent import route_after_state_check
-from graph.agents.eval_agent import route_after_eval
+from rag.graph.nodes.classify_node import classify_node
+from rag.graph.nodes.state_check_node import state_check_node
+from rag.graph.nodes.question_node import question_node
+from rag.graph.nodes.answer_node import answer_node
+from rag.graph.nodes.slot_memory_node import slot_memory_node
+from rag.graph.nodes.extract_node import extract_node
+from rag.graph.nodes.search_vectordb_node import search_vectordb_node
+from rag.graph.nodes.eval_node import eval_node
+from rag.graph.nodes.sql_search_node import sql_search_node
+from rag.graph.nodes.chat_llm_node import chat_llm_node
+from rag.graph.agents.classify_agent import route_after_classify
+from rag.graph.agents.state_check_agent import route_after_state_check
+from rag.graph.agents.eval_agent import route_after_eval
 
 
 def print_header(text):
@@ -27,9 +27,9 @@ def print_header(text):
 
 
 def print_node(node_name, state):
-    print(f"\n{'─' * 70}")
-    print(f"📍 노드: {node_name}")
-    print(f"{'─' * 70}")
+    print(f"\n{'-' * 70}")
+    print(f"[노드] {node_name}")
+    print(f"{'-' * 70}")
     
     # 주요 상태 출력
     if state.get("question_type"):
@@ -45,7 +45,7 @@ def print_node(node_name, state):
         print(f"  관련 이미지: {len(state['related_images'])}개")
     
     if state.get("bot_question"):
-        print(f"  🤖 봇 질문: {state['bot_question']}")
+        print(f"  [봇 질문] {state['bot_question']}")
     
     if state.get("current_slot"):
         print(f"  현재 슬롯: {state['current_slot']}")
@@ -62,7 +62,7 @@ def print_node(node_name, state):
         print(f"  상담 컨텍스트: {state['counseling_context'][:100]}...")
     
     if state.get("final_answer"):
-        print(f"  ✅ 최종 답변 생성됨 (길이: {len(state['final_answer'])}자)")
+        print(f"  [완료] 최종 답변 생성됨 (길이: {len(state['final_answer'])}자)")
 
 
 def test_information():
@@ -70,7 +70,7 @@ def test_information():
     print_header("테스트 1: 정보형 질문")
     
     question = "우울증이란 무엇인가요?"
-    print(f"\n👤 질문: {question}\n")
+    print(f"\n[질문] {question}\n")
     
     state = {"user_question": question}
     
@@ -108,11 +108,11 @@ def test_information():
         print_node("chat_llm", state)
         
         # 최종 답변 출력
-        print(f"\n{'═' * 70}")
-        print("🤖 최종 답변:")
-        print(f"{'═' * 70}")
+        print(f"\n{'=' * 70}")
+        print("[최종 답변]")
+        print(f"{'=' * 70}")
         print(state.get("final_answer", "답변 없음"))
-        print(f"{'═' * 70}")
+        print(f"{'=' * 70}")
         
         return True
         
@@ -132,8 +132,8 @@ def test_counseling():
     print("(테스트를 중단하려면 'quit' 입력)\n")
     
     # 초기 질문 받기
-    print("─" * 70)
-    initial_question = input("👤 당신: ").strip()
+    print("-" * 70)
+    initial_question = input("[당신] ").strip()
     
     if not initial_question or initial_question.lower() == 'quit':
         print("\n테스트를 종료합니다.")
@@ -159,9 +159,9 @@ def test_counseling():
         
         while turn < max_turns:
             turn += 1
-            print(f"\n{'═' * 70}")
+            print(f"\n{'=' * 70}")
             print(f"  Turn {turn}")
-            print(f"{'═' * 70}")
+            print(f"{'=' * 70}")
             
             # state_check
             result = state_check_node(state)
@@ -173,7 +173,7 @@ def test_counseling():
             
             if next_route == "slot_memory":
                 # 모든 slot 완료
-                print("\n✅ 모든 질문이 완료되었습니다!")
+                print("\n[완료] 모든 질문이 완료되었습니다!")
                 
                 # slot_memory
                 state = slot_memory_node(state)
@@ -206,11 +206,11 @@ def test_counseling():
                 print_node("chat_llm", state)
                 
                 # 최종 답변 출력
-                print(f"\n{'═' * 70}")
-                print("🤖 최종 답변:")
-                print(f"{'═' * 70}")
+                print(f"\n{'=' * 70}")
+                print("[최종 답변]")
+                print(f"{'=' * 70}")
                 print(state.get("final_answer", "답변 없음"))
-                print(f"{'═' * 70}")
+                print(f"{'=' * 70}")
                 
                 break
             
@@ -222,7 +222,7 @@ def test_counseling():
                 
                 # 사용자 답변 받기
                 print()
-                user_answer = input("👤 당신: ").strip()
+                user_answer = input("[당신] ").strip()
                 
                 if user_answer.lower() == 'quit':
                     print("\n상담을 중단합니다.")
@@ -282,8 +282,8 @@ def main():
     if results:
         print_header("테스트 결과 요약")
         for name, result in results:
-            status = "✅ 성공" if result else "❌ 실패"
-            print(f"  {status}: {name} 테스트")
+            status = "[성공]" if result else "[실패]"
+            print(f"  {status} {name} 테스트")
         
         total = len(results)
         passed = sum(1 for _, r in results if r)

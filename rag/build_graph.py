@@ -16,21 +16,21 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ===== Nodes import =====
-from graph.nodes.classify_node import classify_node
-from graph.nodes.search_vectordb_node import search_vectordb_node
-from graph.nodes.eval_node import eval_node
-from graph.nodes.sql_search_node import sql_search_node
-from graph.nodes.chat_llm_node import chat_llm_node
-from graph.nodes.state_check_node import state_check_node
-from graph.nodes.question_node import question_node
-from graph.nodes.answer_node import answer_node
-from graph.nodes.slot_memory_node import slot_memory_node
-from graph.nodes.extract_node import extract_node
+from rag.graph.nodes.classify_node import classify_node
+from rag.graph.nodes.search_vectordb_node import search_vectordb_node
+from rag.graph.nodes.eval_node import eval_node
+from rag.graph.nodes.sql_search_node import sql_search_node
+from rag.graph.nodes.chat_llm_node import chat_llm_node
+from rag.graph.nodes.state_check_node import state_check_node
+from rag.graph.nodes.question_node import question_node
+from rag.graph.nodes.answer_node import answer_node
+from rag.graph.nodes.slot_memory_node import slot_memory_node
+from rag.graph.nodes.extract_node import extract_node
 
 # ===== Agents import (라우팅 함수) =====
-from graph.agents.classify_agent import route_after_classify
-from graph.agents.state_check_agent import route_after_state_check
-from graph.agents.eval_agent import route_after_eval
+from rag.graph.agents.classify_agent import route_after_classify
+from rag.graph.agents.state_check_agent import route_after_state_check
+from rag.graph.agents.eval_agent import route_after_eval
 
 
 # ===== State 정의 =====
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     
     try:
         app = build_graph()
-        print("✓ 그래프 빌드 완료!")
+        print("[완료] 그래프 빌드 완료!")
         
         # 그래프 구조 출력
         print("\n=== 그래프 구조 (Mermaid) ===")
@@ -175,12 +175,13 @@ if __name__ == "__main__":
         try:
             print("\n그래프를 PNG로 저장 중...")
             img = app.get_graph().draw_mermaid_png()
-            with open("graph_structure.png", "wb") as f:
+            output_path = Path(__file__).parent / "graph_structure.png"
+            with open(output_path, "wb") as f:
                 f.write(img)
-            print("✓ graph_structure.png 파일로 저장 완료!")
+            print(f"[완료] {output_path} 파일로 저장 완료!")
         except Exception as e:
             print(f"PNG 저장 실패 (무시): {e}")
             
     except Exception as e:
-        print(f"✗ 그래프 빌드 실패: {e}")
+        print(f"[실패] 그래프 빌드 실패: {e}")
         raise

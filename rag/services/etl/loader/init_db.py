@@ -22,13 +22,10 @@ from dotenv import load_dotenv
 
 
 def get_project_root():
-    """프로젝트 루트 경로 반환"""
-    current = Path(__file__).resolve().parent
-    while current != current.parent:
-        if (current / '.git').exists():
-            break
-        current = current.parent
-    return current
+    """프로젝트 루트 경로 반환 (rag 폴더)"""
+    # 현재 파일: rag/services/etl/loader/init_db.py
+    # parents[0]: loader/, parents[1]: etl/, parents[2]: services/, parents[3]: rag/
+    return Path(__file__).resolve().parents[3]
 
 
 # 데이터 파일 경로 상수

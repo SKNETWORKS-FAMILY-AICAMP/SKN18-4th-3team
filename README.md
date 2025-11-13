@@ -81,12 +81,12 @@ DBeaver 또는 다른 데이터베이스 클라이언트에서 연결 설정을 
 **실행:**
 
 ```bash
-python services/etl/extract/extract_cli.py
+python -m rag.services.etl.extract.extract_cli
 ```
 
 **결과 확인:**
 
-- `data/raw/` 디렉토리에 크롤링된 데이터 파일 저장 확인
+- `rag/data/raw/` 디렉토리에 크롤링된 데이터 파일 저장 확인
 
 ---
 
@@ -104,7 +104,7 @@ python services/etl/extract/extract_cli.py
 **실행:**
 
 ```bash
-python services/etl/transform/transform_cli.py
+python -m rag.services.etl.transform.transform_cli
 ```
 
 ---
@@ -119,7 +119,7 @@ python services/etl/transform/transform_cli.py
 #### 3.1. 데이터베이스 테이블 생성
 
 ```bash
-python services/etl/loader/init_db.py
+python -m rag.services.etl.loader.init_db
 ```
 
 **옵션:**
@@ -130,13 +130,13 @@ python services/etl/loader/init_db.py
 #### 3.2. 이미지 RDB 적재
 
 ```bash
-python services/etl/loader/load_rdb.py
+python -m rag.services.etl.loader.load_rdb
 ```
 
 #### 3.3. Vector DB 적재
 
 ```bash
-python services/etl/loader/load_vectordb.py
+python -m rag.services.etl.loader.load_vectordb
 ```
 
 ---
