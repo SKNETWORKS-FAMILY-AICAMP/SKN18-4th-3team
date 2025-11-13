@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { getChatInfo } from "../api/chat";
 import { logout } from "../api/auth";
 import { buildAbsoluteMediaUrl } from "../utils/media";
-import Sphere2D from "./Sphere2D";
 import "./Header.css";
 
 function Header({
@@ -90,7 +89,7 @@ function Header({
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <Sphere2D size={40} transparent={true} />
+              <span>{userInitial}</span>
             )}
           </div>
           <span className="user-name">{fallbackName}</span>
