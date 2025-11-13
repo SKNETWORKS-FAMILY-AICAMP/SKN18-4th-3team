@@ -1,5 +1,3 @@
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
@@ -9,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from apps.users.models import User
 from apps.chatbot.models import Conversation, Message
+from .serializers import ProfileUpdateSerializer, ChangePasswordSerializer
 
 
 @api_view(['GET'])
@@ -29,13 +28,12 @@ def profile_view(request):
 @permission_classes([IsAuthenticated])
 def profile_update_view(request):
     """프로필 업데이트 (사용자명만 변경 가능)"""
+    serializer = ProfileUpdateSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     user = request.user
-    username = request.data.get('username')
-
-    if not username:
-        return Response({'error': '사용자명을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    user.username = username
+    user.username = serializer.validated_data['username']
     user.save()
 
     return Response({
@@ -53,27 +51,17 @@ def profile_update_view(request):
 @permission_classes([IsAuthenticated])
 def change_password_view(request):
     """비밀번호 변경"""
-    user = request.user
-    current_password = request.data.get('current_password')
-    new_password = request.data.get('new_password')
-    new_password_confirm = request.data.get('new_password_confirm')
+    serializer = ChangePasswordSerializer(data=request.data, context={'user': request.user})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    if not all([current_password, new_password, new_password_confirm]):
-        return Response({'error': '모든 필드를 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
+    user = request.user
+    current_password = serializer.validated_data['current_password']
+    new_password = serializer.validated_data['new_password']
 
     # 현재 비밀번호 확인
     if not user.check_password(current_password):
-        return Response({'error': '현재 비밀번호가 올바르지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    # 새 비밀번호 일치 확인
-    if new_password != new_password_confirm:
-        return Response({'error': '새 비밀번호가 일치하지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    # 비밀번호 유효성 검사
-    try:
-        validate_password(new_password, user)
-    except ValidationError as e:
-        return Response({'error': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'current_password': '현재 비밀번호가 올바르지 않습니다.'}, status=status.HTTP_400_BAD_REQUEST)
 
     user.set_password(new_password)
     user.save()

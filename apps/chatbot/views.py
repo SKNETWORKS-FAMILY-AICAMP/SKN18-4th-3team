@@ -2,7 +2,6 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
 from .models import Conversation, Message
 from django.shortcuts import get_object_or_404
 
@@ -25,34 +24,16 @@ def chat_view(request):
         return Response({'is_authenticated': False, 'user': None})
 
 
-class ConversationPagination(PageNumberPagination):
-    page_size = 20
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
-
 class ConversationListCreateView(generics.ListCreateAPIView):
     """대화 세션 목록 조회 및 생성 (로그인 사용자만)"""
     permission_classes = [IsAuthenticated]
-    pagination_class = ConversationPagination
 
     def get_queryset(self):
         return Conversation.objects.filter(user=self.request.user).order_by('-updated_at')
 
     def list(self, request, *args, **kwargs):
+        """대화 세션 목록 전체 반환 (무한 스크롤용)"""
         queryset = self.get_queryset()
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            conversations = [{
-                'id': conv.id,
-                'title': conv.title or 'Untitled',
-                'created_at': conv.created_at,
-                'updated_at': conv.updated_at,
-                'message_count': conv.messages.count()
-            } for conv in page]
-            return self.get_paginated_response(conversations)
-
         conversations = [{
             'id': conv.id,
             'title': conv.title or 'Untitled',

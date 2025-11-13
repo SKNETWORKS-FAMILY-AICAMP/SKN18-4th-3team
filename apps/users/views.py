@@ -1,12 +1,11 @@
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import User
+from .serializers import UserSignupSerializer, UserLoginSerializer, EmailCheckSerializer
 
 
 @api_view(['POST'])
@@ -33,48 +32,18 @@ def signup_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    # 필수 필드 확인
-    username = request.data.get('username')
-    email = request.data.get('email')
-    password = request.data.get('password')
-    password_confirm = request.data.get('password_confirm')
-
-    if not all([username, email, password, password_confirm]):
-        return Response(
-            {'error': '모든 필수 필드를 입력해주세요.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    # 비밀번호 일치 확인
-    if password != password_confirm:
-        return Response(
-            {'error': '비밀번호가 일치하지 않습니다.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    # 이메일 중복 확인
-    if User.objects.filter(email=email).exists():
-        return Response(
-            {'error': '이미 사용 중인 이메일입니다.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    # 비밀번호 유효성 검사
-    try:
-        validate_password(password)
-    except ValidationError as e:
-        return Response(
-            {'error': e.messages},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    # Serializer를 통한 검증
+    serializer = UserSignupSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # 회원가입 처리
     try:
         with transaction.atomic():
             user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password
+                username=serializer.validated_data['username'],
+                email=serializer.validated_data['email'],
+                password=serializer.validated_data['password']
             )
 
             # 프로필 이미지가 있으면 저장
@@ -122,13 +91,11 @@ def check_email_view(request):
         "message": "사용 가능한 이메일입니다." / "이미 사용 중인 이메일입니다."
     }
     """
-    email = request.data.get('email')
+    serializer = EmailCheckSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    if not email:
-        return Response(
-            {'error': '이메일을 입력해주세요.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    email = serializer.validated_data['email']
 
     # 이메일 중복 확인
     if User.objects.filter(email=email).exists():
@@ -178,14 +145,12 @@ def login_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    email = request.data.get('email')
-    password = request.data.get('password')
+    serializer = UserLoginSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    if not all([email, password]):
-        return Response(
-            {'error': '이메일과 비밀번호를 입력해주세요.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    email = serializer.validated_data['email']
+    password = serializer.validated_data['password']
 
     # 이메일로 사용자 인증 (USERNAME_FIELD='email')
     user = authenticate(request, username=email, password=password)
