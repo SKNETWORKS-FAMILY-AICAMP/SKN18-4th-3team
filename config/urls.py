@@ -28,6 +28,9 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
 ]
 
-# Media files serving (개발 환경용)
+# Static files serving (개발 환경용)
 if settings.DEBUG:
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()
+    # Media files serving
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

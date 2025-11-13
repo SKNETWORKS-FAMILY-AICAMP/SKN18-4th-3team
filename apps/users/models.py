@@ -20,6 +20,10 @@ class User(AbstractUser):
     # 로그인 필드를 email로 변경
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
+    
+    # first_name, last_name 필드 제거 (사용하지 않음)
+    first_name = None
+    last_name = None
 
     class Meta:
         db_table = 'users'

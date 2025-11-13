@@ -1,3 +1,3 @@
 from django.contrib import admin
 
-# Register your models here.
+# TODO: 추후 개발시 admin 등록 예정
