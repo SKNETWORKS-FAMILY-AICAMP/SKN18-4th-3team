@@ -29,12 +29,13 @@ class Conversation(models.Model):
         verbose_name_plural = '대화 세션'
         ordering = ['-updated_at']
         indexes = [
-            models.Index(fields=['-updated_at']),  # 최신 대화 조회 성능 향상
-            models.Index(fields=['user', '-updated_at']),  # 사용자별 대화 조회 성능 향상
+            models.Index(fields=['updated_at']),  # 최신 대화 조회 성능 향상
+            models.Index(fields=['user', 'updated_at']),  # 사용자별 대화 조회 성능 향상
         ]
 
     def __str__(self):
         return f"{self.user.username} - {self.title or 'Untitled'}"
+
 
 class Message(models.Model):
     """

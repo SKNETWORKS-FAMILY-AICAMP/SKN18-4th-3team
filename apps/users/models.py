@@ -6,8 +6,8 @@ class User(AbstractUser):
     """
     사용자 모델 - Django의 기본 User 모델을 확장
     """
-    email = models.EmailField(unique=True, verbose_name='이메일')
-    username = models.CharField(max_length=150, verbose_name='사용자명')
+    email = models.EmailField(unique=True, blank=False, null=False, verbose_name='이메일')
+    
     profile_image = models.ImageField(
         upload_to='profile_images/',
         null=True,
@@ -16,7 +16,6 @@ class User(AbstractUser):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='가입일')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='수정일')
-    is_active = models.BooleanField(default=True, verbose_name='활성 상태')
 
     # 로그인 필드를 email로 변경
     USERNAME_FIELD = 'email'
