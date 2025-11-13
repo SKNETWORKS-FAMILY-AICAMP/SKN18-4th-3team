@@ -11,6 +11,6 @@ urlpatterns = [
     path('delete/', views.delete_account_view, name='delete_account'),
     path('upload-image/', views.upload_profile_image_view, name='upload_profile_image'),
 
-    # 활동 로그 및 통계
-    path('activity/', views.activity_log_view, name='activity_log'),
+    # 사용자 통계
+    path('statistics/', views.user_statistics_view, name='statistics'),
 ]
