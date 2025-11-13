@@ -152,7 +152,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 # Media files (프로필 이미지 업로드용)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BACKEND_DIR / 'media'
+MEDIA_ROOT = PROJECT_ROOT / 'media'  # 프로젝트 루트의 media 디렉토리
 
 # Django REST Framework 설정
 REST_FRAMEWORK = {
