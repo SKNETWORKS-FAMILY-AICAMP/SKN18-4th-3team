@@ -37,14 +37,7 @@ def search_vectordb_node(state):
 
     # Vector DB 검색
     try:
-        import sys
-        from pathlib import Path
-        # rag 폴더를 sys.path에 추가
-        rag_root = Path(__file__).parent.parent.parent
-        if str(rag_root) not in sys.path:
-            sys.path.insert(0, str(rag_root))
-        
-        from services.vector_store import get_vector_store
+        from rag.services.vector_store import get_vector_store
 
         vector_store = get_vector_store()
         retrieved_chunks = vector_store.search(
