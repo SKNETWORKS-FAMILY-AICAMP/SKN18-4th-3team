@@ -8,6 +8,16 @@ class User(AbstractUser):
     """
     email = models.EmailField(unique=True, blank=False, null=False, verbose_name='이메일')
     
+    # username을 unique가 아니게 변경 (email이 로그인 필드이므로)
+    username = models.CharField(
+        max_length=150,
+        unique=False,  # email이 unique이므로 username은 중복 허용
+        blank=False,
+        null=False,
+        verbose_name='사용자명',
+        help_text='필수값. 이메일이 로그인 필드입니다.'
+    )
+    
     profile_image = models.ImageField(
         upload_to='profile_images/',
         null=True,

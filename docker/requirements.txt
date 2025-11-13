@@ -27,3 +27,6 @@ openai>=1.0.0
 
 # 크롤링
 playwright==1.55.0
+
+# 암호화 (대화 내용 암호화)
+cryptography==43.0.3

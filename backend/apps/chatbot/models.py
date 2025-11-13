@@ -1,7 +1,8 @@
 from django.db import models
 from django.conf import settings
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from .encryption import encrypt_content, decrypt_content
 
 
 class Conversation(models.Model):
@@ -79,6 +80,40 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.conversation.id} - {self.role}: {self.content[:30]}"
+    
+    def get_decrypted_content(self):
+        """암호화된 내용을 복호화하여 반환"""
+        return decrypt_content(self.content)
+    
+    def set_encrypted_content(self, plain_text: str):
+        """평문을 암호화하여 저장"""
+        self.content = encrypt_content(plain_text)
+
+
+# Signal: 메시지 저장 전 암호화
+@receiver(pre_save, sender=Message)
+def encrypt_message_content(sender, instance, **kwargs):
+    """
+    메시지 저장 전 content 필드를 암호화
+    이미 암호화된 경우는 그대로 유지 (중복 암호화 방지)
+    """
+    if not instance.content:
+        return
+    
+    # 새로 생성되는 메시지인지 확인 (pk가 없으면 새 메시지)
+    if instance.pk:
+        # 기존 메시지 업데이트인 경우, 이미 암호화되어 있을 수 있음
+        try:
+            # 복호화 시도 - 성공하면 이미 암호화된 것
+            decrypted = decrypt_content(instance.content)
+            # 복호화 성공 = 이미 암호화됨, 그대로 유지
+            return
+        except:
+            # 복호화 실패 = 평문이거나 다른 형식, 암호화 진행
+            pass
+    else:
+        # 새 메시지인 경우 암호화
+        instance.content = encrypt_content(instance.content)
 
 
 # Signal: 챗봇 응답 시 대화 제목 자동 생성
@@ -94,7 +129,9 @@ def auto_generate_conversation_title(sender, instance, created, **kwargs):
             # 첫 번째 사용자 메시지 가져오기
             user_message = conversation.messages.filter(role='user').first()
             if user_message:
-                # "사용자 질문 - 챗봇 응답" 형식으로 제목 생성
-                title = f"{user_message.content[:30]} - {instance.content[:30]}"
+                # "사용자 질문 - 챗봇 응답" 형식으로 제목 생성 (복호화된 내용 사용)
+                user_content = user_message.get_decrypted_content()[:30]
+                assistant_content = instance.get_decrypted_content()[:30]
+                title = f"{user_content} - {assistant_content}"
                 conversation.title = title
                 conversation.save(update_fields=['title'])

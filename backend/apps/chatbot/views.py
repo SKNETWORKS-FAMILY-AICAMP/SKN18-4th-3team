@@ -69,7 +69,7 @@ class ConversationDetailView(generics.RetrieveDestroyAPIView):
         messages = [{
             'id': msg.id,
             'role': msg.role,
-            'content': msg.content,
+            'content': msg.get_decrypted_content(),  # 복호화된 내용 반환
             'thinking_process': msg.thinking_process,
             'created_at': msg.created_at
         } for msg in conversation.messages.all().order_by('created_at')]
@@ -104,7 +104,7 @@ class MessageListCreateView(generics.ListCreateAPIView):
         messages = [{
             'id': msg.id,
             'role': msg.role,
-            'content': msg.content,
+            'content': msg.get_decrypted_content(),  # 복호화된 내용 반환
             'thinking_process': msg.thinking_process,
             'created_at': msg.created_at
         } for msg in queryset]
@@ -148,13 +148,13 @@ class MessageListCreateView(generics.ListCreateAPIView):
             'user_message': {
                 'id': user_message.id,
                 'role': user_message.role,
-                'content': user_message.content,
+                'content': user_message.get_decrypted_content(),  # 복호화된 내용 반환
                 'created_at': user_message.created_at
             },
             'assistant_message': {
                 'id': assistant_message.id,
                 'role': assistant_message.role,
-                'content': assistant_message.content,
+                'content': assistant_message.get_decrypted_content(),  # 복호화된 내용 반환
                 'thinking_process': assistant_message.thinking_process,
                 'created_at': assistant_message.created_at
             }
