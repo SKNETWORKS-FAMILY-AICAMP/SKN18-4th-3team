@@ -767,11 +767,11 @@ def main():
     사용 예시:
         python transform_info.py
     """
-    project_root = Path(__file__).resolve().parents[3]
-    input_file = project_root / 'data' / 'raw' / 'diseases_info.json'
+    project_root = Path(__file__).resolve().parents[4]
+    input_file = project_root / 'rag' / 'data' / 'raw' / 'diseases_info.json'
 
-    output_chunks = project_root / 'data' / 'vector_db' / 'info_chunks.json'
-    output_images = project_root / 'data' / 'rdb' / 'image_metadata.json'
+    output_chunks = project_root / 'rag' / 'data' / 'vector_db' / 'info_chunks.json'
+    output_images = project_root / 'rag' / 'data' / 'rdb' / 'image_metadata.json'
 
     # 출력 디렉토리 생성
     output_chunks.parent.mkdir(parents=True, exist_ok=True)

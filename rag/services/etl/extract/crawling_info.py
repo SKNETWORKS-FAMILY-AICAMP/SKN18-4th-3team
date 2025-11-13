@@ -559,7 +559,7 @@ async def main():
     """
     base_url = "https://www.mentalhealth.go.kr/portal/disease/diseaseList.do"
 
-    # 출력 파일 경로 설정 (프로젝트 루트의 data/raw/)
+    # 출력 파일 경로 설정 (rag/data/raw/)
     project_root = Path(__file__).parent.parent.parent.parent
     output_file = project_root / 'data' / 'raw' / 'diseases_info.json'
     output_file.parent.mkdir(parents=True, exist_ok=True)

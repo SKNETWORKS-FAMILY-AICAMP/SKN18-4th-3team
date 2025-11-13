@@ -15,7 +15,7 @@ Classify Agent
 """
 
 from typing import Dict, Any
-from graph.nodes.classify_node import classify_node
+from rag.graph.nodes.classify_node import classify_node
 
 _ALLOWED = {"information", "counseling", "unknown"}
 

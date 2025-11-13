@@ -32,7 +32,7 @@ slot_memory 노드는 두 방향으로 동시에 데이터 전달:
 
 """
 
-from graph.nodes.slot_memory_node import slot_memory_node
+from rag.graph.nodes.slot_memory_node import slot_memory_node
 
 
 def memory_agent(state):
