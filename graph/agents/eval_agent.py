@@ -55,21 +55,31 @@ def route_after_eval(state):
     
     Returns:
         "__end__": chunk 없음 (답변 불가)
-        "sql_search": chunk 있음 (이미지 검색)
+        "sql_search": chunk 있음 + 이미지 검색 필요
+        "chat_llm": chunk 있음 + 이미지 검색 불필요 (바로 답변)
         
     Note: 
         - 검증된 chunk가 존재하면:
-          * eval → sql_search 엣지로 RDB 이미지 검색
-          * eval → chat_llm  엣지로 검증된 chunk 직접 전달 (build_graph.py에서 정의)
-        - 두 결과를 chat_llm에서 종합해 최종 답변 생성
+          * chunk_id가 있으면 → sql_search (이미지 검색)
+          * chunk_id가 없으면 → chat_llm (바로 답변)
+        - sql_search를 거치면 자동으로 chat_llm으로 이동
     """
     verified_chunks: List[Dict[str, Any]] = state.get("verified_chunks") or []
     
     if not verified_chunks:
         # 검증된 chunk 없음 → 답변 불가 → 종료
         return "__end__"
-    else:
-        # 검증된 chunk 있음 → 이미지 검색
-        # (동시에 eval → chat_llm 직접 엣지로 chunk도 전달됨)
+    
+    # chunk_id가 있는지 확인 (이미지 검색 가능 여부)
+    has_chunk_id = any(
+        chunk.get("chunk_id") or chunk.get("metadata", {}).get("chunk_id")
+        for chunk in verified_chunks
+    )
+    
+    if has_chunk_id:
+        # chunk_id 있음 → 이미지 검색 후 답변
         return "sql_search"
+    else:
+        # chunk_id 없음 → 바로 답변
+        return "chat_llm"
         

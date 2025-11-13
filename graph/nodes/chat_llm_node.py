@@ -129,8 +129,7 @@ def chat_llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
+            ]
         )
         answer = resp.choices[0].message.content.strip()
     except Exception as e:

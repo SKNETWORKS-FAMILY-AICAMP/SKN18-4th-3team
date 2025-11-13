@@ -44,8 +44,10 @@ from typing import Dict, Any
 # ▼ OpenAI SDK 사용 (프로젝트 래퍼가 있으면 교체하세요)
 try:
     from openai import OpenAI
+    from dotenv import load_dotenv
+    load_dotenv()  # .env 파일 로드
     _client = OpenAI()  # 환경변수 OPENAI_API_KEY 필요
-except Exception:  # SDK 미설치/키 미설정 시에도 코드 동작
+except Exception as e:  # SDK 미설치/키 미설정 시에도 코드 동작
     _client = None
 
 
@@ -80,8 +82,7 @@ def _classify_with_llm(q: str) -> str:
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user}
-            ],
-            temperature=0
+            ]
         )
         label = resp.choices[0].message.content.strip().lower()
         
