@@ -31,7 +31,7 @@ chat_llm은 verified_chunks와 related_images 둘 다 받아서 답변 생성
 """
 
 from typing import Dict, Any, List
-from graph.nodes.eval_node import eval_node
+from rag.graph.nodes.eval_node import eval_node
 
 
 def eval_agent(state: Dict[str, Any]) -> Dict[str, Any]:
