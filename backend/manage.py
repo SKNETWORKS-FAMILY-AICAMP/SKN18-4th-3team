@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# .env 파일 로드
-BASE_DIR = Path(__file__).resolve().parent
+# .env 파일 로드 (프로젝트 루트 기준)
+BASE_DIR = Path(__file__).resolve().parent.parent  # 프로젝트 루트
 load_dotenv(BASE_DIR / '.env')
 
 

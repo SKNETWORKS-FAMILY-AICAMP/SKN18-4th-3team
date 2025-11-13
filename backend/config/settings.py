@@ -15,10 +15,13 @@ from dotenv import load_dotenv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# settings.py는 backend/config/에 있으므로 parent.parent는 backend/, parent.parent.parent는 프로젝트 루트
+BACKEND_DIR = Path(__file__).resolve().parent.parent  # backend/
+PROJECT_ROOT = BACKEND_DIR.parent  # 프로젝트 루트
+BASE_DIR = BACKEND_DIR  # Django의 BASE_DIR은 backend/로 유지
 
-# .env 파일 로드
-load_dotenv(BASE_DIR / '.env')
+# .env 파일 로드 (프로젝트 루트 기준)
+load_dotenv(PROJECT_ROOT / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -149,7 +152,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 # Media files (프로필 이미지 업로드용)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BACKEND_DIR / 'media'
 
 # Django REST Framework 설정
 REST_FRAMEWORK = {
@@ -201,7 +204,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
+            'filename': BACKEND_DIR / 'logs' / 'django.log',
             'formatter': 'verbose',
         },
     },
