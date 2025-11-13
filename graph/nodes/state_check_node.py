@@ -30,6 +30,7 @@ def state_check_node(state):
     """
     user_input = state.get("user_question", "")
     initial_question = state.get("initial_question")
+    current_slot = state.get("current_slot")  # 현재 질문 중인 slot
     
     # 최초 질문 보관 (첫 실행 시에만) -> 이후 loop에서는 initial_question가 계속 유지됨
     if not initial_question:
@@ -50,19 +51,22 @@ def state_check_node(state):
     # 예: {"slot_1": "우울하고 불안해요", } 형태로 저장
     slot_data = state.get("slot_data", {})
 
-    # LLM을 사용하여 사용자 입력에서 slot 정보 추출
-    extracted_info = extract_slot_info(user_input, slot_status)
+    # 초기 질문이거나 answer_node를 거쳐온 경우에만 정보 추출
+    # (question_node를 거치지 않은 경우는 초기 질문)
+    if not current_slot or state.get("user_answer"):
+        # LLM을 사용하여 사용자 입력에서 slot 정보 추출
+        extracted_info = extract_slot_info(user_input, slot_status)
 
-    for slot_num, info in extracted_info.items():
-        if info:
-            slot_data[slot_num] = info
-            slot_status[slot_num] = True
+        for slot_num, info in extracted_info.items():
+            if info:
+                slot_data[slot_num] = info
+                slot_status[slot_num] = True
 
     # 다음 미충족 slot 찾기(slot_1부터 확인)
-    current_slot = None
+    next_slot = None
     for slot_num, is_filled in slot_status.items():
         if not is_filled:
-            current_slot = slot_num
+            next_slot = slot_num
             break
 
     # 업데이트 상태 반환
@@ -70,5 +74,5 @@ def state_check_node(state):
         "initial_question": initial_question,
         "slot_status": slot_status,
         "slot_data": slot_data,
-        "current_slot": current_slot,
+        "current_slot": next_slot,
     }

@@ -94,8 +94,7 @@ def _llm_score_chunks(user_question: str, retrieved_chunks: List[Dict[str, Any]]
             messages=[
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": user_msg},
-            ],
-            temperature=0.0,
+            ]
         )
         raw = resp.choices[0].message.content.strip()
         data = json.loads(raw)

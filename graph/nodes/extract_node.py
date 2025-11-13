@@ -89,8 +89,7 @@ def _call_llm_for_keywords(counseling_text: str) -> List[str]:
             messages=[
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
-            ],
-            temperature=0.0,
+            ]
         )
         raw_text = response.choices[0].message.content or ""
         return _parse_keywords(raw_text)

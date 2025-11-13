@@ -35,7 +35,7 @@ def extract_slot_info(user_input, slot_status):
         return {}
 
     # LLM 초기화
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatOpenAI(model="gpt-4o-mini")
 
     # 프롬프트 템플릿 생성
     prompt = ChatPromptTemplate.from_messages([
