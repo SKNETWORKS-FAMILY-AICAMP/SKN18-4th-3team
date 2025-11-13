@@ -1,6 +1,4 @@
 from rest_framework import serializers
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 from .models import User
 
 
@@ -26,11 +24,9 @@ class UserSignupSerializer(serializers.Serializer):
         if password != password_confirm:
             raise serializers.ValidationError({'password_confirm': '비밀번호가 일치하지 않습니다.'})
 
-        # Django 비밀번호 유효성 검사
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            raise serializers.ValidationError({'password': e.messages})
+        # 최소 길이만 확인 (8자 이상)
+        if len(password) < 8:
+            raise serializers.ValidationError({'password': '비밀번호는 최소 8자 이상이어야 합니다.'})
 
         return attrs
 

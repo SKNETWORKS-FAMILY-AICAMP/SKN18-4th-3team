@@ -208,6 +208,10 @@
   animation: fadeIn 0.25s ease-in forwards;
 }
 
+.message-text .greeting-text {
+  font-size: clamp(2rem, 3.5vw, 3.5rem);
+}
+
 .line-break {
   display: block;
 }
@@ -216,10 +220,10 @@
   display: inline-block;
   width: 3px;
   height: 1.1em;
-  background: linear-gradient(180deg, #6dd5fa, #fca5f1);
-  animation: blink 1.2s infinite;
+  background: #fca5f1; /* 핑크색 고정 */
   margin-left: 4px;
   vertical-align: text-bottom;
+  animation: blink 1s infinite;
 }
 
 .sphere-section {

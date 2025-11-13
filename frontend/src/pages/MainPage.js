@@ -13,10 +13,22 @@ function MainPage() {
   const [conversations, setConversations] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
-  const fullText = useMemo(
-    () => "안녕하세요, 오늘 마음이 어떠신가요?\n편하게 이야기 시작해보세요.",
-    []
-  );
+  const fullText = useMemo(() => {
+    if (isAuthenticated && user?.username) {
+      return `안녕하세요, ${user.username}님!\n오늘 마음이 어떠신가요?\n편하게 이야기를 시작해보세요.`;
+    }
+    return "안녕하세요, 오늘 마음이 어떠신가요?\n편하게 이야기를 시작해보세요.";
+  }, [isAuthenticated, user]);
+
+  // 인사말 부분의 끝 인덱스 계산 (로그인 시 첫 번째 \n 전까지)
+  const greetingEndIndex = useMemo(() => {
+    if (isAuthenticated && user?.username) {
+      const greeting = `안녕하세요, ${user.username}님!`;
+      return greeting.length;
+    }
+    return -1; // 비로그인 시에는 인사말 부분 없음
+  }, [isAuthenticated, user]);
+
   const [textIndex, setTextIndex] = useState(0);
 
   useEffect(() => {
@@ -36,9 +48,15 @@ function MainPage() {
     fetchInfo();
   }, []);
 
+  // fullText가 변경되면 타입라이터 효과 재시작
+  useEffect(() => {
+    setDisplayedText("");
+    setTextIndex(0);
+  }, [fullText]);
+
   useEffect(() => {
     if (textIndex < fullText.length) {
-      const delay = fullText[textIndex] === " " ? 40 : 80;
+      const delay = fullText[textIndex] === " " ? 40 : 70;
       const timeout = setTimeout(() => {
         setDisplayedText((prev) => prev + fullText[textIndex]);
         setTextIndex((prev) => prev + 1);
@@ -115,16 +133,35 @@ function MainPage() {
         <main className="main-content">
           <div className="typewriter-section">
             <div className="message-text">
-              {displayedText.split("").map((char, index) => (
-                <span
-                  key={`${char}-${index}`}
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                  className={char === "\n" ? "line-break" : ""}
-                >
-                  {char === "\n" ? <br /> : char}
-                </span>
-              ))}
-              <span className="cursor" />
+              {displayedText.split("").map((char, index) => {
+                const isGreeting =
+                  greetingEndIndex > 0 && index < greetingEndIndex;
+                return (
+                  <span
+                    key={`${char}-${index}`}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                    className={
+                      char === "\n"
+                        ? "line-break"
+                        : isGreeting
+                        ? "greeting-text"
+                        : ""
+                    }
+                  >
+                    {char === "\n" ? <br /> : char}
+                  </span>
+                );
+              })}
+              <span
+                className="cursor"
+                style={{
+                  opacity:
+                    displayedText.length === fullText.length &&
+                    fullText.length > 0
+                      ? 1
+                      : 0,
+                }}
+              />
             </div>
           </div>
 
