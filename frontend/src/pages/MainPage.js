@@ -78,7 +78,7 @@ function MainPage() {
   };
 
   const handleNewCounseling = () => {
-    navigate("/chat", { state: { createNew: true } });
+    navigate("/chat", { state: { createNew: true, openSidebar: true } });
   };
 
   const handleConversationSelect = (conversationId) => {
@@ -87,15 +87,21 @@ function MainPage() {
 
   return (
     <div className="main-page">
-      <Header showSidebar onToggleSidebar={handleToggleSidebar} />
+      <Header
+        showSidebar
+        onToggleSidebar={handleToggleSidebar}
+        isSidebarOpen={isSidebarOpen}
+      />
 
       <div className="main-body">
         {isSidebarOpen && (
-          <aside className="main-sidebar">
+          <aside className={`main-sidebar ${isSidebarOpen ? "open" : ""}`}>
             {isAuthenticated && (
               <button className="sidebar-new" onClick={handleNewCounseling}>
                 New Counseling
-                <span aria-hidden="true">✈️</span>
+                <span className="material-symbols-outlined paper-plane-icon">
+                  send
+                </span>
               </button>
             )}
             <div className="sidebar-list">

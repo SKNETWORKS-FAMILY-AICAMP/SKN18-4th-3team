@@ -51,17 +51,30 @@
   width: 100%;
   margin: 0 auto;
   padding: 0 40px;
+  margin-top: 80px; /* 헤더 높이만큼 여백 */
+  transition: margin-left 0.3s ease;
+}
+
+.main-body:has(.main-sidebar.open) .main-content {
+  margin-left: 220px;
 }
 
 /* Sidebar */
 .main-sidebar {
-  position: relative;
+  position: fixed;
+  left: 0;
+  top: 80px; /* 헤더 높이 */
   width: 220px;
-  border-right: 1px solid #1f1f2d;
-  padding-right: 12px;
+  height: calc(100vh - 80px);
+  border-right: 1px solid #e0e0e0;
+  padding: 20px 12px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow: hidden;
+  background-color: #fff;
+  z-index: 150;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-new {
@@ -74,13 +87,21 @@
   background: #000;
   color: #fff;
   font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebar-new:hover {
   background: #fff;
   color: #000;
+}
+
+.paper-plane-icon {
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
 .sidebar-list {
@@ -94,49 +115,70 @@
   padding-top: 8px;
 }
 
+.sidebar-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.sidebar-list::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
 .sidebar-item {
   position: relative;
-  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 6px;
   text-align: left;
-  border: 1px solid #000;
+  border: 1px solid #ddd;
   padding: 14px;
   border-radius: 12px;
   background: #fff;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease,
-    border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebar-item:hover {
-  z-index: 10;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
   background: #f8f8f8;
   border-color: #333;
 }
 
+.sidebar-item strong {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
 .sidebar-meta {
   font-size: 12px;
-  color: #555;
+  color: #888;
 }
 
 .sidebar-snippet {
   font-size: 13px;
-  color: #222;
+  color: #555;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .sidebar-empty {
-  border: 1px solid #000;
+  border: 1px solid #ddd;
   border-radius: 12px;
   padding: 24px;
   text-align: center;
-  color: #555;
+  color: #888;
+  font-size: 14px;
 }
 
 .sidebar-fade-top,
@@ -168,6 +210,7 @@
   justify-content: center;
   padding: 130px 40px 82px;
   gap: 60px;
+  transition: margin-left 0.3s ease;
 }
 
 .typewriter-section {

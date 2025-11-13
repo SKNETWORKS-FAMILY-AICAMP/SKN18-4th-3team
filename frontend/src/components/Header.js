@@ -3,9 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { getChatInfo } from "../api/chat";
 import { logout } from "../api/auth";
 import { buildAbsoluteMediaUrl } from "../utils/media";
+import Sphere2D from "./Sphere2D";
 import "./Header.css";
 
-function Header({ showSidebar = false, onToggleSidebar = null }) {
+function Header({
+  showSidebar = false,
+  onToggleSidebar = null,
+  isSidebarOpen = false,
+}) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [avatarError, setAvatarError] = useState(false);
@@ -48,7 +53,7 @@ function Header({ showSidebar = false, onToggleSidebar = null }) {
   const userInitial = fallbackName.charAt(0).toUpperCase();
 
   return (
-    <header className="app-header">
+    <header className={`app-header ${isSidebarOpen ? "sidebar-open" : ""}`}>
       <div className="header-left">
         {showSidebar && onToggleSidebar && (
           <button className="sidebar-toggle-btn" onClick={onToggleSidebar}>
@@ -85,7 +90,7 @@ function Header({ showSidebar = false, onToggleSidebar = null }) {
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <span>{userInitial}</span>
+              <Sphere2D size={40} transparent={true} />
             )}
           </div>
           <span className="user-name">{fallbackName}</span>
