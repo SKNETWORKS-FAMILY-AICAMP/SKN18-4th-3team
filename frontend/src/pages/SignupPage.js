@@ -183,9 +183,12 @@ function SignupPage() {
 
   return (
     <div className="signup-page">
+      {/* Header - 페이지 최상단 고정 */}
       <Header showSidebar={false} />
 
-      <div className="signup-container">
+      {/* Main Content - 헤더 아래 중앙 배치 */}
+      <main className="signup-main">
+        <div className="signup-container">
         <div className="signup-box">
           <div className="step-indicator">
             <span className={step >= 1 ? "active" : ""}>1</span>
@@ -343,7 +346,8 @@ function SignupPage() {
             </form>
           )}
         </div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -24,39 +24,43 @@ function LoginPage() {
 
   return (
     <div className="login-page">
+      {/* Header - 페이지 최상단 고정 */}
       <Header showSidebar={false} />
 
-      <div className="login-container">
-        <div className="login-box">
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label>EMAIL</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>PWD</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && <div className="error-message">{error}</div>}
-            <div className="button-group">
-              <button type="submit" className="btn-login">LOGIN</button>
-              <button type="button" className="btn-signup" onClick={() => navigate('/signup')}>
-                SIGNUP
-              </button>
-            </div>
-          </form>
+      {/* Main Content - 헤더 아래 중앙 배치 */}
+      <main className="login-main">
+        <div className="login-container">
+          <div className="login-box">
+            <form onSubmit={handleLogin} className="login-form">
+              <div className="form-group">
+                <label>EMAIL</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>PWD</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <div className="error-message">{error}</div>}
+              <div className="button-group">
+                <button type="submit" className="btn-login">LOGIN</button>
+                <button type="button" className="btn-signup" onClick={() => navigate('/signup')}>
+                  SIGNUP
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
