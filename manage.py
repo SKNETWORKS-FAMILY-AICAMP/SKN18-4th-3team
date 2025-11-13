@@ -2,11 +2,25 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# .env 파일 로드
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / '.env')
 
 
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    
+    # runserver 명령어 실행 시 환경 변수에서 포트 읽기
+    if len(sys.argv) >= 2 and sys.argv[1] == 'runserver':
+        django_port = os.getenv('DJANGO_PORT', '8000')
+        # 포트가 명시적으로 지정되지 않은 경우 환경 변수 포트 사용
+        if len(sys.argv) == 2:
+            sys.argv.append(django_port)
+    
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
