@@ -274,8 +274,8 @@ class FAQTransformer:
 def main(chunk_size: int = 1500, chunk_overlap: int = 200):
     """FAQ Transform 실행"""
     project_root = Path(__file__).resolve().parents[3]
-    input_file = project_root / 'data' / 'raw' / 'diseases_faq.json'
-    output_file = project_root / 'data' / 'vector_db' / 'faq_chunks.json'
+    input_file = project_root / 'rag' / 'data' / 'raw' / 'diseases_faq.json'
+    output_file = project_root / 'rag' / 'data' / 'vector_db' / 'faq_chunks.json'
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
 

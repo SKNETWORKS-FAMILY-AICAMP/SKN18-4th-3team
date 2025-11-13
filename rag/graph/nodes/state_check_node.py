@@ -22,7 +22,7 @@
 - current_slot: 다음 미충족 slot 번호
 """
 
-from graph.agents.state_check_agent import extract_slot_info
+from rag.graph.agents.state_check_agent import extract_slot_info
 
 def state_check_node(state):
     """
