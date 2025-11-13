@@ -167,14 +167,63 @@ REST_FRAMEWORK = {
 }
 
 # CORS 설정 (리액트와 Django 연동)
+REACT_PORT = os.getenv('REACT_PORT', '3000')  # 기본값 3000
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',  # 리액트 개발 서버
-    'http://127.0.0.1:3000',
+    f'http://localhost:{REACT_PORT}',
+    f'http://127.0.0.1:{REACT_PORT}',
 ]
 CORS_ALLOW_CREDENTIALS = True  # 쿠키/세션 허용
 
 # CSRF 설정 (리액트 연동)
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
+    f'http://localhost:{REACT_PORT}',
+    f'http://127.0.0.1:{REACT_PORT}',
 ]
+
+# 로깅 설정 (프론트엔드 요청 로그 기록)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',  # 모든 요청 로그 기록
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
