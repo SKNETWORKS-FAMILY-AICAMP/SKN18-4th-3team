@@ -466,7 +466,7 @@ class DiseaseDataTransformer:
                     content_parts.append(f"[표 {table_idx + 1}]\n{table_text}")
                 all_images.extend(table_images)
 
-        # 3. images 배열 처리 (크롤링 v2에서 추가됨)
+        # 3. images 배열 처리
         images_data = section_data.get("images", [])
         if images_data:
             section_images = self.image_processor.process_images_array(
@@ -672,8 +672,8 @@ def main():
     project_root = Path(__file__).resolve().parents[3]
     input_file = project_root / 'data' / 'raw' / 'diseases_info.json'
 
-    output_chunks = project_root / 'data' / 'transform' / 'info_chunks.json'
-    output_images = project_root / 'data' / 'transform' / 'image_metadata.json'
+    output_chunks = project_root / 'data' / 'vector_db' / 'info_chunks.json'
+    output_images = project_root / 'data' / 'rdb' / 'image_metadata.json'
 
     # 출력 디렉토리 생성
     output_chunks.parent.mkdir(parents=True, exist_ok=True)

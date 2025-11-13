@@ -11,11 +11,11 @@ services:
       POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8 --auth-host=scram-sha-256"
     ports:
-      - "5432:5432"
+      - "${PG_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - SKN3rd_network
+      - SKN4th_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
@@ -30,5 +30,5 @@ volumes:
 
 # 네트워크 정의
 networks:
-  SKN3rd_network:
+  SKN4th_network:
     driver: bridge

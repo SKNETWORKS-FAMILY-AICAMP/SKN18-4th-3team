@@ -342,3 +342,52 @@ $RECYCLE.BIN/
 data/*
 
 # End of https://www.toptal.com/developers/gitignore/api/python,react,django,macos,windows
+# Python
+*.pyc
+*.py[cod]
+*$py.class
+__pycache__/
+*.so
+
+# 가상환경
+.env
+.venv
+venv/
+ENV/
+
+# Django
+*.log
+*.pot
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# 테스트 및 커버리지
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# IDE
+.vscode/
+.idea/
+*.sublime*
+.DS_Store
+
+# 빌드 및 배포
+build/
+dist/
+*.egg-info/
+
+# 데이터 폴더
+# data/
+
+# Windows
+Thumbs.db
+*.lnk
+
+# 기타
+.history/
+node_modules/

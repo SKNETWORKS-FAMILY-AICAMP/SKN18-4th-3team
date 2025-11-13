@@ -1,0 +1,221 @@
+"""
+Vector DB 데이터 로더 (임베딩 생성 + 적재)
+
+FAQ/INFO 청크 데이터를 임베딩 후 PostgreSQL Vector DB에 적재합니다.
+- OpenAI text-embedding-3-large (3072차원)
+"""
+
+import json
+import os
+import psycopg2
+from pathlib import Path
+from typing import List, Dict, Any
+from init_db import get_db_config, get_project_root
+from dotenv import load_dotenv
+
+# OpenAI 임포트
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    print("⚠️  openai 라이브러리가 설치되지 않았습니다. OpenAI 임베딩을 사용할 수 없습니다.")
+
+
+class EmbeddingGenerator:
+    """임베딩 생성기 (OpenAI Large 전용)"""
+
+    def __init__(self):
+        self.openai_client = None
+
+        # 환경 변수 로드
+        project_root = get_project_root()
+        load_dotenv(project_root / '.env')
+
+    def load_openai(self):
+        """OpenAI 클라이언트 초기화"""
+        if not OPENAI_AVAILABLE:
+            print("❌ OpenAI를 사용할 수 없습니다.")
+            return False
+
+        try:
+            api_key = os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                print("❌ OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.")
+                return False
+
+            self.openai_client = OpenAI(api_key=api_key)
+            print("✅ OpenAI 클라이언트 초기화 완료")
+            return True
+        except Exception as e:
+            print(f"❌ OpenAI 클라이언트 초기화 실패: {e}")
+            return False
+
+    def generate_openai_embedding(self, text: str) -> List[float]:
+        """OpenAI Large 임베딩 생성 (3072차원)"""
+        if not self.openai_client:
+            raise RuntimeError("OpenAI 클라이언트가 초기화되지 않았습니다.")
+
+        response = self.openai_client.embeddings.create(
+            model="text-embedding-3-large",
+            input=text
+        )
+        return response.data[0].embedding
+
+
+def load_chunk_data(data_files: List[Path]) -> List[Dict[str, Any]]:
+    """청크 데이터 JSON 파일들 로드"""
+    all_chunks = []
+
+    for data_file in data_files:
+        print(f"\n📂 청크 데이터 로드 중: {data_file}")
+
+        if not data_file.exists():
+            print(f"⚠️  파일을 찾을 수 없습니다: {data_file}")
+            continue
+
+        with open(data_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        print(f"✅ {len(data)}개의 청크를 로드했습니다.")
+        all_chunks.extend(data)
+
+    print(f"\n📊 총 {len(all_chunks)}개의 청크를 로드했습니다.")
+    return all_chunks
+
+
+def extract_metadata(chunk: Dict[str, Any]) -> Dict[str, Any]:
+    """청크에서 메타데이터 추출"""
+    metadata = chunk.get('metadata', {})
+
+    return {
+        'chunk_id': chunk.get('id') or metadata.get('chunk_id'),
+        'content': chunk.get('content', ''),
+        'disease_name': metadata.get('disease_name', 'Unknown'),
+        'category': metadata.get('category', 'Unknown'),
+        'has_visual': metadata.get('has_visual', False),
+        'content_type': metadata.get('content_type', 'text')
+    }
+
+
+def insert_embeddings(
+    conn,
+    table_name: str,
+    chunks_with_embeddings: List[Dict[str, Any]]
+) -> int:
+    """임베딩 데이터를 DB에 삽입"""
+    cursor = conn.cursor()
+
+    insert_sql = f"""
+    INSERT INTO {table_name} (
+        chunk_id, content, embedding,
+        disease_name, category, has_visual, content_type
+    ) VALUES (
+        %s, %s, %s, %s, %s, %s, %s
+    )
+    ON CONFLICT (chunk_id) DO UPDATE SET
+        content = EXCLUDED.content,
+        embedding = EXCLUDED.embedding,
+        disease_name = EXCLUDED.disease_name,
+        category = EXCLUDED.category,
+        has_visual = EXCLUDED.has_visual,
+        content_type = EXCLUDED.content_type;
+    """
+
+    inserted_count = 0
+
+    for chunk in chunks_with_embeddings:
+        try:
+            cursor.execute(insert_sql, (
+                chunk['chunk_id'],
+                chunk['content'],
+                chunk['embedding'],
+                chunk['disease_name'],
+                chunk['category'],
+                chunk['has_visual'],
+                chunk['content_type']
+            ))
+            inserted_count += 1
+
+        except Exception as e:
+            print(f"⚠️  임베딩 삽입 실패 (chunk_id: {chunk.get('chunk_id')}): {e}")
+            continue
+
+    conn.commit()
+    cursor.close()
+
+    return inserted_count
+
+
+def main():
+    """메인 실행 함수"""
+    print("=" * 60)
+    print("     Vector DB 데이터 로더")
+    print("=" * 60)
+
+    # 프로젝트 루트 경로
+    project_root = get_project_root()
+    data_files = [
+        project_root / 'data' / 'vector_db' / 'faq_chunks.json',
+        project_root / 'data' / 'vector_db' / 'info_chunks.json'
+    ]
+
+    # 청크 데이터 로드
+    chunks = load_chunk_data(data_files)
+
+    if not chunks:
+        print("\n❌ 적재할 데이터가 없습니다.")
+        return
+
+    # 임베딩 생성기 초기화
+    generator = EmbeddingGenerator()
+
+    # DB 연결
+    print("\n📡 데이터베이스 연결 중...")
+    config = get_db_config()
+
+    try:
+        conn = psycopg2.connect(**config)
+        print("✅ 데이터베이스 연결 성공")
+
+        # OpenAI Large 임베딩 생성 및 적재
+        if generator.load_openai():
+            print("\n" + "=" * 60)
+            print("🔄 OpenAI Large 임베딩 생성 및 적재 중...")
+            print("=" * 60)
+
+            chunks_with_embeddings = []
+            for i, chunk in enumerate(chunks, 1):
+                metadata = extract_metadata(chunk)
+                try:
+                    embedding = generator.generate_openai_embedding(metadata['content'])
+                    metadata['embedding'] = embedding
+                    chunks_with_embeddings.append(metadata)
+
+                    if i % 100 == 0:
+                        print(f"  진행 중: {i}/{len(chunks)} 청크 처리됨")
+
+                except Exception as e:
+                    print(f"⚠️  임베딩 생성 실패 (chunk_id: {metadata['chunk_id']}): {e}")
+                    continue
+
+            inserted = insert_embeddings(conn, 'embeddings_openai_large', chunks_with_embeddings)
+            print(f"✅ OpenAI Large: {inserted}개의 임베딩 삽입 완료")
+        else:
+            print("❌ OpenAI 클라이언트 초기화에 실패했습니다.")
+            return
+
+        print("\n" + "=" * 60)
+        print("✅ 모든 작업 완료!")
+        print("=" * 60)
+
+        conn.close()
+
+    except psycopg2.Error as e:
+        print(f"\n❌ 데이터베이스 오류: {e}")
+    except Exception as e:
+        print(f"\n❌ 오류 발생: {e}")
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,41 @@
+graph:
+  name: counseling-rag
+  description: "전문상담가 RAG (entry=classify). eval=gpt-5-mini, others=gpt-5-nano (노드 내부에서 모델 선택)"
+  entry: classify
+  exit: ["END"]
+
+# 로더는 nodes[].id 와 edges[] 만 사용합니다.
+nodes:
+  - id: classify
+  - id: search_vectordb
+  - id: eval
+  - id: sql_search
+  - id: state_check
+  - id: question
+  - id: answer
+  - id: slot_memory
+  - id: extract
+  - id: chat_llm
+
+# "A -> B" 포맷
+edges:
+  - "classify -> search_vectordb"
+  - "classify -> state_check"
+  - "classify -> END"
+
+  - "search_vectordb -> eval"
+  - "eval -> sql_search"
+  - "eval -> END"
+  - "eval -> chat_llm"
+  - "sql_search -> chat_llm"
+
+  - "state_check -> question"
+  - "state_check -> slot_memory"
+  - "question -> answer"
+  - "answer -> state_check"
+
+  - "slot_memory -> extract"
+  - "slot_memory -> chat_llm"
+  - "extract -> search_vectordb"
+
+  - "chat_llm -> END"
