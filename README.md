@@ -95,6 +95,7 @@ python services/etl/extract/extract_cli.py
 **처리 내용:**
 
 - LangChain splitter를 이용한 청킹 진행
+- FAQ/질병 정보 청킹 기본값: `chunk_size=1500`, `chunk_overlap=200` (약 1,500자 청크, 200자 오버랩)
 - 자가진단테스트/참고문헌 데이터 삭제
 - 테이블을 텍스트로 전환
 - 이미지 메타데이터 생성
