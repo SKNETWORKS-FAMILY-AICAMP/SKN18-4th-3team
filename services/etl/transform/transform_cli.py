@@ -89,9 +89,13 @@ def run_faq_transform(chunk_size: int = 1500, chunk_overlap: int = 200) -> Dict[
 # 질병 정보 Transform Worker
 # ==============================
 
-def run_info_transform() -> Dict[str, Any]:
+def run_info_transform(chunk_size: int = 1500, chunk_overlap: int = 200) -> Dict[str, Any]:
     """
     질병 정보 Transform 실행 (병렬 처리용)
+
+    Args:
+        chunk_size: INFO 청크당 최대 문자 수
+        chunk_overlap: INFO 청크 간 중복 문자 수
 
     Returns:
         Transform 결과 통계
@@ -115,7 +119,10 @@ def run_info_transform() -> Dict[str, Any]:
     print(f"📂 [INFO] 입력: {len(diseases_data)}개 질병")
 
     # Transform
-    transformer = DiseaseDataTransformer()
+    transformer = DiseaseDataTransformer(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
+    )
 
     all_chunks = []
     all_images = []
@@ -160,8 +167,8 @@ def run_parallel_transform(chunk_size: int = 1500, chunk_overlap: int = 200):
     FAQ와 질병 정보 Transform을 병렬로 실행
 
     Args:
-        chunk_size: FAQ 청크당 최대 문자 수
-        chunk_overlap: FAQ 청크 간 중복 문자 수
+        chunk_size: FAQ/INFO 청크당 최대 문자 수
+        chunk_overlap: FAQ/INFO 청크 간 중복 문자 수
     """
     print("=" * 60)
     print("🚀 Transform 병렬 실행 시작")
@@ -173,7 +180,7 @@ def run_parallel_transform(chunk_size: int = 1500, chunk_overlap: int = 200):
     with ProcessPoolExecutor(max_workers=2) as executor:
         # 작업 제출
         future_faq = executor.submit(run_faq_transform, chunk_size, chunk_overlap)
-        future_info = executor.submit(run_info_transform)
+        future_info = executor.submit(run_info_transform, chunk_size, chunk_overlap)
 
         # 결과 수집
         results = []
@@ -223,8 +230,8 @@ def run_sequential_transform(chunk_size: int = 1500, chunk_overlap: int = 200):
     FAQ와 질병 정보 Transform을 순차적으로 실행 (디버깅용)
 
     Args:
-        chunk_size: FAQ 청크당 최대 문자 수
-        chunk_overlap: FAQ 청크 간 중복 문자 수
+        chunk_size: FAQ/INFO 청크당 최대 문자 수
+        chunk_overlap: FAQ/INFO 청크 간 중복 문자 수
     """
     print("=" * 60)
     print("🔄 Transform 순차 실행 시작 (디버깅 모드)")
@@ -237,7 +244,7 @@ def run_sequential_transform(chunk_size: int = 1500, chunk_overlap: int = 200):
     print(f"✅ [FAQ] 완료 ({result_faq['elapsed_time']:.2f}초)\n")
 
     # INFO Transform
-    result_info = run_info_transform()
+    result_info = run_info_transform(chunk_size, chunk_overlap)
     print(f"✅ [INFO] 완료 ({result_info['elapsed_time']:.2f}초)\n")
 
     total_elapsed = time.time() - start_time
@@ -298,13 +305,13 @@ def main():
         '--chunk-size',
         type=int,
         default=1500,
-        help='FAQ 청크당 최대 문자 수 (기본값: 1500)'
+        help='FAQ/INFO 청크당 최대 문자 수 (기본값: 1500)'
     )
     parser.add_argument(
         '--chunk-overlap',
         type=int,
         default=200,
-        help='FAQ 청크 간 중복 문자 수 (기본값: 200)'
+        help='FAQ/INFO 청크 간 중복 문자 수 (기본값: 200)'
     )
     parser.add_argument(
         '--sequential',
