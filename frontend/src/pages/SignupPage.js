@@ -159,7 +159,24 @@ function SignupPage() {
       console.log("회원가입 성공:", data);
       navigate("/"); // 메인 채팅 페이지로 이동
     } catch (err) {
-      setError(err.response?.data?.error || "회원가입에 실패했습니다.");
+      console.error("회원가입 오류:", err.response?.data);
+      // 백엔드에서 반환하는 에러 형식 처리
+      const errorData = err.response?.data;
+      let errorMessage = "회원가입에 실패했습니다.";
+
+      if (errorData) {
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === "object") {
+          // serializer.errors 형식 처리
+          const errorMessages = Object.values(errorData).flat();
+          errorMessage = errorMessages.join(", ") || errorMessage;
+        } else if (typeof errorData === "string") {
+          errorMessage = errorData;
+        }
+      }
+
+      setError(errorMessage);
       setStep(2); // 오류 시 2단계로 돌아가기
     }
   };
@@ -271,6 +288,7 @@ function SignupPage() {
                   name="passwordConfirm"
                   value={formData.passwordConfirm}
                   onChange={handleInputChange}
+                  placeholder="비밀번호 확인"
                   required
                 />
               </div>

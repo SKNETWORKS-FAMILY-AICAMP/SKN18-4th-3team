@@ -4,7 +4,8 @@
   background: linear-gradient(135deg, #fafafa 0%, #f0f4ff 50%, #fff0f8 100%);
   display: flex;
   flex-direction: column;
-  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 .signup-container {
@@ -29,8 +30,14 @@
 .step-indicator {
   display: flex;
   justify-content: center;
-  gap: 30px;
+  align-items: center;
+  gap: 130px;
   margin-bottom: 50px;
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .step-indicator span {
@@ -45,11 +52,40 @@
   font-size: 20px;
   color: #999;
   transition: all 0.3s;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
 }
 
 .step-indicator span.active {
   background-color: #000;
   color: white;
+}
+
+/* 스텝퍼 원 사이의 라인 - 기본 회색 */
+.step-indicator span:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 0px);
+  top: 50%;
+  width: 130px;
+  height: 3px;
+  background-color: #e0e0e0;
+  z-index: 1;
+  transform: translateY(-50%);
+  transition: background-color 0.3s;
+}
+
+/* 두 번째가 active일 때 1-2 사이 라인 검은색 (2단계 이상) */
+/* 첫 번째가 active이고 다음 형제(두 번째)도 active일 때 첫 번째의 ::after 검은색 */
+.step-indicator span:nth-child(1).active:has(+ span.active)::after {
+  background-color: #000;
+}
+
+/* 세 번째가 active일 때 2-3 사이 라인 검은색 (3단계) */
+/* 두 번째가 active이고 다음 형제(세 번째)도 active일 때 두 번째의 ::after 검은색 */
+.step-indicator span:nth-child(2).active:has(+ span.active)::after {
+  background-color: #000;
 }
 
 /* Step 1: Avatar & Username */
@@ -60,11 +96,25 @@
   margin-bottom: 40px;
 }
 
+/* Step 1 form - NEXT 버튼을 우측 하단에 배치하기 위해 */
+.signup-box form {
+  position: relative;
+  min-height: 500px;
+  padding-bottom: 20px;
+}
+
+/* Step 2, 3 form - Step 1과 동일한 높이와 패딩 */
+.signup-box form:nth-of-type(2),
+.signup-box form:last-of-type {
+  min-height: 500px;
+  padding-bottom: 20px;
+}
+
 .avatar-preview {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6DD5FA 0%, #C4B5FD 50%, #FCA5F1 100%);
+  background: linear-gradient(135deg, #6dd5fa 0%, #c4b5fd 50%, #fca5f1 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,27 +131,36 @@
 
 .avatar-placeholder {
   color: white;
-  font-size: 60px;
+  font-size: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 150px;
+  height: 150px;
+  background: white;
+  border-radius: 50%;
+  margin: 0 auto;
 }
 
-/* 이미지 선택 버튼 - 핑크톤 */
+/* 이미지 선택 버튼 - 검은색, 작게 */
 .btn-image-select {
-  padding: 12px 40px;
-  background: #FCA5F1;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 8px 20px !important;
+  background: #000 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 20px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 15px rgba(252, 165, 241, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: inline-block;
 }
 
 .btn-image-select:hover {
-  background: #FB8FE8;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(252, 165, 241, 0.4);
+  background: #333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Form Groups */
@@ -145,6 +204,7 @@
 
 .form-group input::placeholder {
   color: #999;
+  opacity: 1; /* 브라우저 기본 opacity 오버라이드 */
 }
 
 .field-message {
@@ -166,16 +226,15 @@
 
 /* Buttons */
 .button-group {
-  display: flex;
-  gap: 15px;
+  position: static;
   margin-top: 40px;
+  min-height: 60px;
 }
 
 /* Next 버튼 - 블루/퍼플 톤 (주요 액션) */
 .btn-next {
-  flex: 1;
   padding: 15px 30px;
-  background: #C4B5FD;
+  background: #c4b5fd;
   color: white;
   border: none;
   border-radius: 25px;
@@ -186,8 +245,54 @@
   box-shadow: 0 4px 15px rgba(196, 181, 253, 0.3);
 }
 
+/* Step 1의 NEXT 버튼만 우측 하단에 배치 */
+.signup-box form:first-of-type .btn-next {
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+}
+
+/* Step 2, 3의 버튼들 - form을 기준으로 Step 1과 동일한 위치 (bottom: -20px) */
+.signup-box form .button-group .btn-next {
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+}
+
+.signup-box form .button-group .btn-back {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+}
+
+/* Step 3의 SIGNUP 버튼 - 가입 정보 확인 박스 바로 아래에 배치 */
+.signup-box form:last-of-type .button-group {
+  margin-top: 0;
+  position: static;
+}
+
+.signup-box form:last-of-type .signup-summary {
+  margin-bottom: 80px;
+}
+
+/* summary의 높이를 계산해서 form 기준으로 SIGNUP 버튼 배치 (summary 높이 + margin-bottom) */
+.signup-box form:last-of-type .button-group .btn-signup {
+  position: absolute;
+  top: 200px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  transform: none;
+}
+
+.signup-box form:last-of-type .button-group .btn-back {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+}
+
 .btn-next:hover {
-  background: #B3A0FC;
+  background: #b3a0fc;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(196, 181, 253, 0.4);
 }
@@ -196,7 +301,7 @@
 .btn-signup {
   flex: 1;
   padding: 15px 30px;
-  background: #C4B5FD;
+  background: #c4b5fd;
   color: white;
   border: none;
   border-radius: 25px;
@@ -208,30 +313,37 @@
 }
 
 .btn-signup:hover {
-  background: #B3A0FC;
+  background: #b3a0fc;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(196, 181, 253, 0.4);
 }
 
-/* Back 버튼 - 핑크톤 (보조 액션) */
+/* Step 3의 SIGNUP 버튼 hover 시 */
+.signup-box form:last-of-type .button-group .btn-signup:hover {
+  transform: translateY(-2px);
+}
+
+/* Back 버튼 - 연한 회색, 좌측 하단 */
 .btn-back {
-  flex: 1;
   padding: 15px 30px;
-  background: #FFB6C1;
-  color: white;
+  background: #e0e0e0;
+  color: #333;
   border: none;
   border-radius: 25px;
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  bottom: -20px;
+  left: 0;
 }
 
 .btn-back:hover {
-  background: #FF9FAF;
+  background: #d0d0d0;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 /* Step 3: Summary */
@@ -239,7 +351,8 @@
   background-color: #f9f9f9;
   padding: 30px;
   border-radius: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  position: relative;
 }
 
 .signup-summary h3 {

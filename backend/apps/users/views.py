@@ -1,5 +1,6 @@
 from django.contrib.auth import login, logout, authenticate
 from django.db import transaction
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -176,6 +177,7 @@ def login_view(request):
         )
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
