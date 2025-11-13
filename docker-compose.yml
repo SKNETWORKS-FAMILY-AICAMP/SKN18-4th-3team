@@ -1,0 +1,34 @@
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: SKN18-4th
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${PG_DB}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8 --auth-host=scram-sha-256"
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - SKN4th_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# 볼륨 정의
+volumes:
+  postgres_data:
+    driver: local
+
+# 네트워크 정의
+networks:
+  SKN4th_network:
+    driver: bridge
