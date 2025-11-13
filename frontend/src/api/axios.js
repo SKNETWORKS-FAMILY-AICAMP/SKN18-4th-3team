@@ -1,23 +1,26 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// Django API URL 설정
+// localhost는 하드코딩, 포트는 환경변수에서 읽기 (기본값: 8000)
+const DJANGO_PORT = process.env.REACT_APP_DJANGO_PORT || "8000";
+const API_URL = `http://localhost:${DJANGO_PORT}`;
 
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true,  // 세션 쿠키 자동 전송
+  withCredentials: true, // 세션 쿠키 자동 전송
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // CSRF 토큰 가져오기 함수
 const getCookie = (name) => {
   let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
     for (let i = 0; i < cookies.length; i++) {
       const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+      if (cookie.substring(0, name.length + 1) === name + "=") {
         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
         break;
       }
@@ -29,9 +32,9 @@ const getCookie = (name) => {
 // 요청 인터셉터: CSRF 토큰 자동 추가
 api.interceptors.request.use(
   (config) => {
-    const csrfToken = getCookie('csrftoken');
+    const csrfToken = getCookie("csrftoken");
     if (csrfToken) {
-      config.headers['X-CSRFToken'] = csrfToken;
+      config.headers["X-CSRFToken"] = csrfToken;
     }
     return config;
   },
@@ -46,7 +49,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // 인증 오류 시 로그인 페이지로 리다이렉트
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }

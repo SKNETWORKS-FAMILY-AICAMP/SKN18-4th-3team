@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getChatInfo, getConversations, createConversation, getConversationDetail, sendMessage, sendGuestMessage, deleteConversation } from '../api/chat';
-import { logout } from '../api/auth';
+import Header from '../components/Header';
 import './ChatPage.css';
 
 function ChatPage() {
@@ -13,12 +13,18 @@ function ChatPage() {
   const [inputMessage, setInputMessage] = useState('');
   const [guestHistory, setGuestHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadChatInfo();
-  }, []);
+    // 메인에서 사이드바 토글을 통해 넘어온 경우
+    if (location.state?.openSidebar) {
+      setIsSidebarOpen(true);
+    }
+  }, [location]);
 
   useEffect(() => {
     scrollToBottom();
@@ -132,41 +138,21 @@ function ChatPage() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (err) {
-      console.error('로그아웃 실패:', err);
-    }
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   return (
     <div className="chat-page">
-      {/* Header */}
-      <header className="chat-header">
-        <h1>MindCare</h1>
-        <div className="header-actions">
-          {isAuthenticated ? (
-            <>
-              <button onClick={() => navigate('/profile')} className="btn-profile">
-                {user?.username || '프로필'}
-              </button>
-              <button onClick={handleLogout} className="btn-logout">로그아웃</button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => navigate('/login')} className="btn-login">로그인</button>
-              <button onClick={() => navigate('/signup')} className="btn-signup">회원가입</button>
-            </>
-          )}
-        </div>
-      </header>
+      <Header
+        showSidebar={isAuthenticated}
+        onToggleSidebar={handleToggleSidebar}
+      />
 
       <div className="chat-container">
         {/* Sidebar - 로그인 사용자만 */}
         {isAuthenticated && (
-          <aside className="chat-sidebar">
+          <aside className={`chat-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
             <button onClick={handleNewConversation} className="btn-new-chat">+ 새 대화</button>
             <div className="conversation-list">
               {conversations.map(conv => (
@@ -209,7 +195,23 @@ function ChatPage() {
             ) : (
               messages.map((msg, idx) => (
                 <div key={idx} className={`message ${msg.role}`}>
-                  <div className="message-content">
+                  {/* Message Avatar */}
+                  <div className="message-avatar">
+                    {msg.role === 'user' ? (
+                      user?.profile_image ? (
+                        <img src={user.profile_image} alt="user" />
+                      ) : (
+                        <span className="avatar-placeholder">
+                          {user?.username?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      )
+                    ) : (
+                      <span className="avatar-placeholder">AI</span>
+                    )}
+                  </div>
+
+                  {/* Message Content */}
+                  <div className="message-content-wrapper">
                     {msg.role === 'assistant' && msg.thinking_process && (
                       <div className="thinking-process">
                         {msg.thinking_process.map((node, i) => (
@@ -219,29 +221,54 @@ function ChatPage() {
                         ))}
                       </div>
                     )}
-                    <p>{msg.content}</p>
-                    <span className="message-time">
-                      {new Date(msg.created_at).toLocaleTimeString()}
-                    </span>
+                    <div className="message-content">
+                      {msg.content}
+                    </div>
+                    <div className="message-time">
+                      {new Date(msg.created_at).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
                   </div>
                 </div>
               ))
             )}
+
+            {/* Loading Indicator */}
+            {isLoading && (
+              <div className="message assistant">
+                <div className="message-avatar">
+                  <span className="avatar-placeholder">AI</span>
+                </div>
+                <div className="message-content-wrapper">
+                  <div className="typing-indicator">
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSendMessage} className="message-input-form">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="메시지를 입력하세요..."
-              disabled={isLoading}
-            />
-            <button type="submit" disabled={isLoading || !inputMessage.trim()}>
-              {isLoading ? '전송 중...' : '전송'}
-            </button>
-          </form>
+          {/* Input form - centered when no messages */}
+          <div className={`message-input-container ${messages.length === 0 ? 'center' : ''}`}>
+            <form onSubmit={handleSendMessage} className="message-input-form">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="메시지를 입력하세요..."
+                disabled={isLoading}
+              />
+              <button type="submit" disabled={isLoading || !inputMessage.trim()}>
+                전송
+              </button>
+            </form>
+          </div>
         </main>
       </div>
     </div>
