@@ -2,8 +2,9 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .models import Conversation, Message
+from .models import Conversation, Message, SentimentAnalysis
 from django.shortcuts import get_object_or_404
+from django.db.models import Count, Q
 
 
 @api_view(['GET'])
@@ -34,13 +35,59 @@ class ConversationListCreateView(generics.ListCreateAPIView):
     def list(self, request, *args, **kwargs):
         """대화 세션 목록 전체 반환 (무한 스크롤용)"""
         queryset = self.get_queryset()
-        conversations = [{
-            'id': conv.id,
-            'title': conv.title or 'Untitled',
-            'created_at': conv.created_at,
-            'updated_at': conv.updated_at,
-            'message_count': conv.messages.count()
-        } for conv in queryset]
+        conversations = []
+
+        for conv in queryset:
+            # 마지막 사용자 메시지 가져오기
+            last_user_message = conv.messages.filter(role='user').order_by('-created_at').first()
+            last_message_preview = ''
+
+            if last_user_message:
+                decrypted_content = last_user_message.get_decrypted_content()
+                last_message_preview = decrypted_content[:50] + ('...' if len(decrypted_content) > 50 else '')
+
+            # 이 대화의 사용자 메시지들의 감정 통계 계산
+            user_message_ids = conv.messages.filter(role='user').values_list('id', flat=True)
+            sentiment_stats = SentimentAnalysis.objects.filter(
+                message_id__in=user_message_ids
+            ).aggregate(
+                positive=Count('id', filter=Q(sentiment_type='positive')),
+                negative=Count('id', filter=Q(sentiment_type='negative')),
+                neutral=Count('id', filter=Q(sentiment_type='neutral'))
+            )
+
+            total_sentiments = sentiment_stats['positive'] + sentiment_stats['negative'] + sentiment_stats['neutral']
+
+            # 퍼센테이지 계산
+            if total_sentiments > 0:
+                sentiment_percentages = {
+                    'positive': round((sentiment_stats['positive'] / total_sentiments * 100), 1),
+                    'negative': round((sentiment_stats['negative'] / total_sentiments * 100), 1),
+                    'neutral': round((sentiment_stats['neutral'] / total_sentiments * 100), 1)
+                }
+            else:
+                # TODO: 추후 삭제 - 임시 하드코딩 (감정 분석 연동 전까지)
+                # 대화별로 다른 비율을 보여주기 위해 대화 ID 기반으로 생성
+                import random
+                random.seed(conv.id)  # 대화 ID를 시드로 사용하여 일관된 값 생성
+                negative = round(random.uniform(10, 40), 1)
+                neutral = round(random.uniform(20, 50), 1)
+                positive = round(100 - negative - neutral, 1)
+                sentiment_percentages = {
+                    'positive': positive,
+                    'negative': negative,
+                    'neutral': neutral
+                }
+
+            conversations.append({
+                'id': conv.id,
+                'title': conv.title or 'Untitled',
+                'created_at': conv.created_at,
+                'updated_at': conv.updated_at,
+                'message_count': conv.messages.count(),
+                'last_message_preview': last_message_preview,
+                'sentiment_percentages': sentiment_percentages
+            })
 
         return Response(conversations)
 

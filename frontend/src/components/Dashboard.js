@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   getKpiData,
   getConversationFrequency,
@@ -6,9 +6,8 @@ import {
   getSentimentDistribution,
   getEmotionKeywords,
   getTopDiseases,
-  getDiseaseTrends,
-} from '../api/profile';
-import './Dashboard.css';
+} from "../api/profile";
+import "./Dashboard.css";
 
 function Dashboard() {
   const [kpiData, setKpiData] = useState(null);
@@ -17,9 +16,8 @@ function Dashboard() {
   const [sentimentDistribution, setSentimentDistribution] = useState(null);
   const [emotionKeywords, setEmotionKeywords] = useState(null);
   const [topDiseases, setTopDiseases] = useState(null);
-  const [diseaseTrends, setDiseaseTrends] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     loadDashboardData();
@@ -27,17 +25,17 @@ function Dashboard() {
 
   const loadDashboardData = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const [kpi, frequency, hourly, sentiment, keywords, diseases, trends] = await Promise.all([
-        getKpiData(),
-        getConversationFrequency(),
-        getHourlyPattern(),
-        getSentimentDistribution(),
-        getEmotionKeywords(),
-        getTopDiseases(),
-        getDiseaseTrends(),
-      ]);
+      const [kpi, frequency, hourly, sentiment, keywords, diseases] =
+        await Promise.all([
+          getKpiData(),
+          getConversationFrequency(),
+          getHourlyPattern(),
+          getSentimentDistribution(),
+          getEmotionKeywords(),
+          getTopDiseases(),
+        ]);
 
       setKpiData(kpi);
       setConversationFrequency(frequency);
@@ -45,10 +43,9 @@ function Dashboard() {
       setSentimentDistribution(sentiment);
       setEmotionKeywords(keywords);
       setTopDiseases(diseases);
-      setDiseaseTrends(trends);
     } catch (err) {
-      console.error('대시보드 데이터 로드 실패:', err);
-      setError('대시보드 데이터를 불러오는데 실패했습니다.');
+      console.error("대시보드 데이터 로드 실패:", err);
+      setError("대시보드 데이터를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
     }
@@ -109,12 +106,6 @@ function Dashboard() {
           <h3>자주 검색한 질환 TOP 10</h3>
           <BarChart data={topDiseases} />
         </div>
-
-        {/* 6. 질환 검색 추이 (멀티라인 차트) */}
-        <div className="chart-card full-width">
-          <h3>주차별 질환 검색 추이</h3>
-          <MultiLineChart data={diseaseTrends} />
-        </div>
       </div>
     </div>
   );
@@ -131,29 +122,34 @@ function LineChart({ data }) {
 
   const points = data.values
     .map((value, index) => {
-      const x = padding + (index / (data.values.length - 1)) * (width - 2 * padding);
+      const x =
+        padding + (index / (data.values.length - 1)) * (width - 2 * padding);
       const y = height - padding - (value / maxValue) * (height - 2 * padding);
       return `${x},${y}`;
     })
-    .join(' ');
+    .join(" ");
 
   return (
     <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
-      <polyline
-        points={points}
-        fill="none"
-        stroke="#4CAF50"
-        strokeWidth="2"
-      />
+      <polyline points={points} fill="none" stroke="#fca5f1" strokeWidth="2" />
       {data.values.map((value, index) => {
-        const x = padding + (index / (data.values.length - 1)) * (width - 2 * padding);
-        const y = height - padding - (value / maxValue) * (height - 2 * padding);
-        return <circle key={index} cx={x} cy={y} r="4" fill="#4CAF50" />;
+        const x =
+          padding + (index / (data.values.length - 1)) * (width - 2 * padding);
+        const y =
+          height - padding - (value / maxValue) * (height - 2 * padding);
+        return <circle key={index} cx={x} cy={y} r="4" fill="#fca5f1" />;
       })}
       {data.labels.map((label, index) => {
-        const x = padding + (index / (data.labels.length - 1)) * (width - 2 * padding);
+        const x =
+          padding + (index / (data.labels.length - 1)) * (width - 2 * padding);
         return (
-          <text key={index} x={x} y={height - 10} textAnchor="middle" fontSize="12">
+          <text
+            key={index}
+            x={x}
+            y={height - 10}
+            textAnchor="middle"
+            fontSize="12"
+          >
             {label}
           </text>
         );
@@ -169,7 +165,7 @@ function PieChart({ data }) {
   const total = data.values.reduce((sum, value) => sum + value, 0);
   if (total === 0) return <div>데이터 없음</div>;
 
-  const colors = ['#4CAF50', '#F44336', '#FFC107'];
+  const colors = ["#fca5f1", "#F44336", "#FFC107"];
   let currentAngle = 0;
 
   const slices = data.values.map((value, index) => {
@@ -203,8 +199,13 @@ function PieChart({ data }) {
       <div className="pie-legend">
         {slices.map((slice, index) => (
           <div key={index} className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: slice.color }}></span>
-            <span>{slice.label}: {slice.percentage}%</span>
+            <span
+              className="legend-color"
+              style={{ backgroundColor: slice.color }}
+            ></span>
+            <span>
+              {slice.label}: {slice.percentage}%
+            </span>
           </div>
         ))}
       </div>
@@ -242,7 +243,7 @@ function HeatmapChart({ data }) {
         {data.heatmap_data.map((row, dayIndex) =>
           row.map((value, hourIndex) => {
             const intensity = value / maxValue;
-            const color = `rgba(76, 175, 80, ${intensity})`;
+            const color = `rgba(252, 165, 241, ${intensity})`;
             return (
               <rect
                 key={`${dayIndex}-${hourIndex}`}
@@ -258,17 +259,19 @@ function HeatmapChart({ data }) {
         )}
 
         {/* X축 레이블 (시간) - 3시간 간격 */}
-        {data.hours.filter((_, i) => i % 3 === 0).map((hour, index) => (
-          <text
-            key={`hour-${hour}`}
-            x={40 + hour * cellSize + cellSize / 2}
-            y="20"
-            textAnchor="middle"
-            fontSize="10"
-          >
-            {hour}h
-          </text>
-        ))}
+        {data.hours
+          .filter((_, i) => i % 3 === 0)
+          .map((hour, index) => (
+            <text
+              key={`hour-${hour}`}
+              x={40 + hour * cellSize + cellSize / 2}
+              y="20"
+              textAnchor="middle"
+              fontSize="10"
+            >
+              {hour}h
+            </text>
+          ))}
       </svg>
     </div>
   );
@@ -280,14 +283,18 @@ function KeywordsCloud({ data }) {
     return <div>데이터 없음</div>;
   }
 
-  const maxCount = Math.max(...data.keywords.map(k => k.count), 1);
+  const maxCount = Math.max(...data.keywords.map((k) => k.count), 1);
 
   return (
     <div className="keywords-cloud">
       {data.keywords.map((keyword, index) => {
         const fontSize = 12 + (keyword.count / maxCount) * 20;
-        const color = keyword.sentiment === 'positive' ? '#4CAF50' :
-                     keyword.sentiment === 'negative' ? '#F44336' : '#FFC107';
+        const color =
+          keyword.sentiment === "positive"
+            ? "#fca5f1"
+            : keyword.sentiment === "negative"
+            ? "#F44336"
+            : "#FFC107";
         return (
           <span
             key={index}
@@ -327,7 +334,7 @@ function BarChart({ data }) {
               y={y + 5}
               width={barWidth}
               height={barHeight - 10}
-              fill="#4CAF50"
+              fill="#fca5f1"
             />
             <text x={130 + barWidth} y={y + 20} fontSize="12">
               {data.values[index]}
@@ -335,83 +342,6 @@ function BarChart({ data }) {
           </g>
         );
       })}
-    </svg>
-  );
-}
-
-// 멀티라인 차트
-function MultiLineChart({ data }) {
-  if (!data || !data.labels || !data.datasets) return <div>데이터 없음</div>;
-  if (data.datasets.length === 0) return <div>데이터 없음</div>;
-
-  const width = 500;
-  const height = 200;
-  const padding = 40;
-  const allValues = data.datasets.flatMap(d => d.data);
-  const maxValue = Math.max(...allValues, 1);
-  const colors = ['#4CAF50', '#2196F3', '#F44336', '#FFC107', '#9C27B0'];
-
-  return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
-      {data.datasets.map((dataset, datasetIndex) => {
-        const points = dataset.data
-          .map((value, index) => {
-            const x = padding + (index / (dataset.data.length - 1)) * (width - 2 * padding);
-            const y = height - padding - (value / maxValue) * (height - 2 * padding);
-            return `${x},${y}`;
-          })
-          .join(' ');
-
-        return (
-          <g key={datasetIndex}>
-            <polyline
-              points={points}
-              fill="none"
-              stroke={colors[datasetIndex % colors.length]}
-              strokeWidth="2"
-            />
-            {dataset.data.map((value, index) => {
-              const x = padding + (index / (dataset.data.length - 1)) * (width - 2 * padding);
-              const y = height - padding - (value / maxValue) * (height - 2 * padding);
-              return (
-                <circle
-                  key={index}
-                  cx={x}
-                  cy={y}
-                  r="3"
-                  fill={colors[datasetIndex % colors.length]}
-                />
-              );
-            })}
-          </g>
-        );
-      })}
-
-      {/* X축 레이블 */}
-      {data.labels.map((label, index) => {
-        const x = padding + (index / (data.labels.length - 1)) * (width - 2 * padding);
-        return (
-          <text key={index} x={x} y={height - 10} textAnchor="middle" fontSize="12">
-            {label}
-          </text>
-        );
-      })}
-
-      {/* 범례 */}
-      {data.datasets.map((dataset, index) => (
-        <g key={`legend-${index}`}>
-          <rect
-            x={width - 150}
-            y={20 + index * 20}
-            width="15"
-            height="3"
-            fill={colors[index % colors.length]}
-          />
-          <text x={width - 130} y={25 + index * 20} fontSize="12">
-            {dataset.label}
-          </text>
-        </g>
-      ))}
     </svg>
   );
 }

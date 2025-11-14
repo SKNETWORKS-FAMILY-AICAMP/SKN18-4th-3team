@@ -14,7 +14,6 @@ import "./ProfilePage.css";
 
 function ProfilePage() {
   const [profile, setProfile] = useState(null);
-  const [activeTab, setActiveTab] = useState("profile"); // 'profile', 'dashboard'
   const [activeSection, setActiveSection] = useState(null); // 'username', 'password', 'delete'
   const [username, setUsername] = useState("");
   const [passwordForm, setPasswordForm] = useState({
@@ -139,11 +138,7 @@ function ProfilePage() {
 
   const renderActiveSection = () => {
     if (!activeSection) {
-      return (
-        <div className="profile-placeholder">
-          <p>변경할 항목을 선택해주세요.</p>
-        </div>
-      );
+      return null;
     }
 
     if (activeSection === "username") {
@@ -285,89 +280,67 @@ function ProfilePage() {
     <div className="profile-page">
       <Header showSidebar={false} />
 
-      {/* 탭 네비게이션 */}
-      <div className="profile-tabs">
-        <button
-          className={`tab-button ${activeTab === "profile" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("profile");
-            setActiveSection(null);
-          }}
-        >
-          프로필 설정
-        </button>
-        <button
-          className={`tab-button ${activeTab === "dashboard" ? "active" : ""}`}
-          onClick={() => setActiveTab("dashboard")}
-        >
-          대시보드
-        </button>
+      <div className="profile-container">
+        <div className="profile-main">
+          <div className="profile-avatar-block">
+            <div className="avatar-section">
+              <div className="avatar-large">
+                {profileImageSrc && !imageError ? (
+                  <img
+                    src={profileImageSrc}
+                    alt="프로필"
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="avatar-placeholder">●</div>
+                )}
+              </div>
+              <label className="btn-image-select">
+                IMG SELECT
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="profile-greeting">
+            <h2>
+              <span className="username">{profile.username}</span>님,
+            </h2>
+            <p>안녕하세요</p>
+          </div>
+
+          <nav className="profile-actions">
+            {menuItems.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className={`profile-action ${
+                  activeSection === item.key ? "active" : ""
+                } ${item.isDanger ? "danger" : ""}`}
+                onClick={() =>
+                  setActiveSection(activeSection === item.key ? null : item.key)
+                }
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="profile-detail">
+          {success && <div className="success-message">{success}</div>}
+          {error && <div className="error-message">{error}</div>}
+          {renderActiveSection()}
+        </div>
       </div>
 
-      {/* 프로필 탭 */}
-      {activeTab === "profile" && (
-        <div className="profile-container">
-          <div className="profile-main">
-            <div className="profile-avatar-block">
-              <div className="avatar-section">
-                <div className="avatar-large">
-                  {profileImageSrc && !imageError ? (
-                    <img
-                      src={profileImageSrc}
-                      alt="프로필"
-                      onError={() => setImageError(true)}
-                    />
-                  ) : (
-                    <div className="avatar-placeholder">●</div>
-                  )}
-                </div>
-                <label className="btn-image-select">
-                  IMG SELECT
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    style={{ display: "none" }}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="profile-greeting">
-              <h2>
-                <span className="username">{profile.username}</span> 님,
-              </h2>
-              <p>안녕하세요</p>
-            </div>
-
-            <nav className="profile-actions">
-              {menuItems.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={`profile-action ${
-                    activeSection === item.key ? "active" : ""
-                  } ${item.isDanger ? "danger" : ""}`}
-                  onClick={() =>
-                    setActiveSection(activeSection === item.key ? null : item.key)
-                  }
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          <div className="profile-detail">
-            {success && <div className="success-message">{success}</div>}
-            {error && <div className="error-message">{error}</div>}
-            {renderActiveSection()}
-          </div>
-        </div>
-      )}
-
-      {/* 대시보드 탭 */}
-      {activeTab === "dashboard" && <Dashboard />}
+      {/* 대시보드 내용을 프로필 하단에 통합 */}
+      <Dashboard />
     </div>
   );
 }

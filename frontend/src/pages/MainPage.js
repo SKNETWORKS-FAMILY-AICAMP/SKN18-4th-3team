@@ -145,11 +145,32 @@ function MainPage() {
                           ? new Date(conv.updated_at).toLocaleString()
                           : ""}
                       </span>
-                      <span className="sidebar-snippet">
-                        {conv.last_message_preview ||
-                          conv.last_message?.content ||
-                          "대화 내용을 요약합니다."}
-                      </span>
+                      {/* 감정 퍼센테이지 바 */}
+                      {conv.sentiment_percentages && (
+                        <div className="sidebar-sentiment-bar">
+                          <div className="sentiment-tooltip">
+                            <strong>나쁨</strong> {conv.sentiment_percentages.negative}% | <strong>중립</strong> {conv.sentiment_percentages.neutral}% | <strong>기쁨</strong> {conv.sentiment_percentages.positive}%
+                          </div>
+                          {conv.sentiment_percentages.negative > 0 && (
+                            <div
+                              className="sentiment-segment negative"
+                              style={{ width: `${conv.sentiment_percentages.negative}%` }}
+                            />
+                          )}
+                          {conv.sentiment_percentages.neutral > 0 && (
+                            <div
+                              className="sentiment-segment neutral"
+                              style={{ width: `${conv.sentiment_percentages.neutral}%` }}
+                            />
+                          )}
+                          {conv.sentiment_percentages.positive > 0 && (
+                            <div
+                              className="sentiment-segment positive"
+                              style={{ width: `${conv.sentiment_percentages.positive}%` }}
+                            />
+                          )}
+                        </div>
+                      )}
                     </button>
                   ))
               )}

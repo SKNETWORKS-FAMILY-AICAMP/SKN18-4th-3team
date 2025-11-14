@@ -103,7 +103,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse; /* 아래에서 위로 쌓이도록 */
   gap: 12px;
   padding-right: 6px;
   margin-top: 60px; /* New Counseling과 검색 사이의 간격 증가 */
@@ -133,39 +133,46 @@
   flex-direction: column;
   gap: 6px;
   text-align: left;
-  border: 1px solid #ddd;
+  border: none;
   padding: 14px;
   padding-right: 36px; /* 삭제 버튼 공간 확보 */
   border-radius: 12px;
   background: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 0; /* flexbox 오버플로우 방지 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .sidebar-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 12px rgba(196, 181, 253, 0.3);
   background: #f8f8f8;
-  border-color: #333;
 }
 
 .sidebar-item.active {
   background: #f8f8f8;
-  border-color: #333;
+  box-shadow: 0 4px 10px rgba(196, 181, 253, 0.25);
 }
 
 .sidebar-item strong {
   font-weight: 700;
   font-size: 14px;
   color: #1a1a1a;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .sidebar-meta {
-  font-size: 12px;
+  font-size: 11px;
   color: #888;
+  text-align: right;
+  white-space: nowrap;
+  align-self: flex-end;
 }
 
 .sidebar-snippet {
@@ -174,6 +181,105 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0; /* flexbox 오버플로우 방지 */
+}
+
+/* 사이드바 - 감정 퍼센테이지 바 */
+.sidebar-sentiment-bar {
+  position: relative;
+  display: flex;
+  width: calc(100% + 20px); /* 양쪽에 여유 공간 */
+  margin-left: -10px; /* 중앙 정렬 */
+  height: 8px;
+  border-radius: 4px;
+  background: #f0f0f0;
+  margin-top: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.sidebar-sentiment-bar:hover {
+  border-color: transparent;
+  border-image: linear-gradient(90deg, #6dd5fa 0%, #c4b5fd 50%, #fca5f1 100%);
+  border-image-slice: 1;
+}
+
+.sentiment-segment {
+  height: 100%;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.sentiment-segment:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.sentiment-segment:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.sentiment-segment.negative {
+  background: #6dd5fa; /* 파란색 - 나쁨 */
+  z-index: 1;
+}
+
+.sentiment-segment.neutral {
+  background: #c4b5fd; /* 보라색 - 중립 */
+  z-index: 2;
+}
+
+.sentiment-segment.positive {
+  background: #fca5f1; /* 분홍색 - 기쁨 */
+  z-index: 3;
+}
+
+/* 감정 바 툴팁 */
+.sidebar-sentiment-bar .sentiment-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fca5f1;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 7px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+  line-height: 1.2;
+  font-weight: 300;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+}
+
+.sidebar-sentiment-bar .sentiment-tooltip strong {
+  font-weight: 700;
+  font-size: 12px;
+  color: white;
+}
+
+.sidebar-sentiment-bar .sentiment-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: #fca5f1;
+}
+
+.sidebar-sentiment-bar:hover .sentiment-tooltip {
+  opacity: 1;
+}
+
+.sidebar-sentiment-bar:hover .sentiment-segment {
+  filter: brightness(1.1);
 }
 
 /* 사이드바 - 삭제 버튼 */
@@ -254,6 +360,13 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
+/* 사이드바가 열렸을 때 메시지 컨테이너도 더 밀리도록 */
+.chat-main.sidebar-open .messages-container {
+  margin-left: 180px;
+  margin-right: auto;
 }
 
 .messages-container::-webkit-scrollbar {
@@ -512,7 +625,7 @@
 
 /* 사이드바가 열렸을 때 입력창도 이동 */
 .chat-main.sidebar-open .message-input-container.center {
-  left: calc(50% + 110px); /* 사이드바 절반(110px)만큼 우측 이동 */
+  left: calc(50%); /* 사이드바 절반 + 추가 여백으로 더 우측 이동 */
 }
 
 .message-input-form {
@@ -525,6 +638,9 @@
   padding: 8px 8px 8px 20px;
   box-shadow: 0 2px 12px rgba(196, 181, 253, 0.2);
   transition: border-color 0.2s, box-shadow 0.2s;
+  align-items: center; /* 수직 중앙 정렬 */
+  min-height: 56px; /* 최소 높이 고정 */
+  max-height: 56px; /* 최대 높이 고정 */
 }
 
 .message-input-form:focus-within {
@@ -540,6 +656,8 @@
   outline: none;
   background: transparent;
   color: #1a1a1a;
+  height: 40px; /* 고정 높이 */
+  line-height: 40px; /* 텍스트 중앙 정렬 */
 }
 
 .message-input-form input::placeholder {
@@ -547,7 +665,7 @@
 }
 
 .message-input-form button {
-  padding: 12px 28px;
+  padding: 0 28px; /* 상하 padding 제거, 좌우만 유지 */
   background: #c4b5fd;
   color: white;
   border: none;
@@ -559,6 +677,10 @@
   flex-shrink: 0;
   min-width: 80px;
   white-space: nowrap;
+  height: 40px; /* 고정 높이 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .message-input-form button:hover:not(:disabled) {
