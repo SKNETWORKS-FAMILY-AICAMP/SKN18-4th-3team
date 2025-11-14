@@ -44,15 +44,16 @@ def get_db_config():
     # 프로젝트 루트 찾기 (.git 기준)
     project_root = get_project_root()
 
-    # .env 파일 로드
-    load_dotenv(project_root / '.env')
+    # .env 파일 로드 (절대 경로로 명시)
+    env_path = project_root / '.env'
+    load_dotenv()
 
     return {
-        'dbname': os.environ['PG_DB'],
-        'user': os.environ['PG_USER'],
-        'password': os.environ['PG_PASSWORD'],
-        'host': 'localhost',  
-        'port': os.environ['PG_PORT']
+        'dbname': os.environ.get('PG_DB'),
+        'user': os.environ.get('PG_USER'),
+        'password': os.environ.get('PG_PASSWORD'),
+        'host': os.environ.get('PG_HOST'),
+        'port': os.environ.get('PG_PORT')
     }
 
 
