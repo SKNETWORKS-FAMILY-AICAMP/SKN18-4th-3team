@@ -9,8 +9,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import psycopg2
 
-# 프로젝트 루트 경로
-BASE_DIR = Path(__file__).resolve().parent
+# 프로젝트 루트 경로 (docs 폴더의 상위 디렉토리)
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # .env 파일 로드
 load_dotenv(BASE_DIR / '.env')
