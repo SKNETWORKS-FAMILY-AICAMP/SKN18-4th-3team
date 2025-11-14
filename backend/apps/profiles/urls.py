@@ -11,12 +11,11 @@ urlpatterns = [
     path('delete/', views.delete_account_view, name='delete_account'),
     path('upload-image/', views.upload_profile_image_view, name='upload_profile_image'),
 
-    # 대시보드 차트 API 엔드포인트 (7개)
+    # 대시보드 차트 API 엔드포인트 (6개)
     path('api/kpi/', views.dashboard_api_kpi, name='api_kpi'),
     path('api/conversation-frequency/', views.dashboard_api_conversation_frequency, name='api_conversation_frequency'),
     path('api/hourly-pattern/', views.dashboard_api_hourly_pattern, name='api_hourly_pattern'),
     path('api/sentiment-distribution/', views.dashboard_api_sentiment_distribution, name='api_sentiment_distribution'),
     path('api/emotion-keywords/', views.dashboard_api_emotion_keywords, name='api_emotion_keywords'),
     path('api/top-diseases/', views.dashboard_api_top_diseases, name='api_top_diseases'),
-    path('api/disease-trends/', views.dashboard_api_disease_trends, name='api_disease_trends'),
 ]

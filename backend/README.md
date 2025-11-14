@@ -20,11 +20,21 @@
 # 가상환경 활성화
 source .venv/bin/activate
 
-# 서버 실행 (환경변수 DJANGO_PORT 사용)
+# 의존성 설치 (프로젝트 루트의 docker/requirements.txt 사용)
+pip install -r ../docker/requirements.txt
+
+# 데이터베이스 마이그레이션
+python manage.py migrate
+
+# 서버 실행
 python manage.py runserver
 ```
 
-서버는 `.env` 파일의 `DJANGO_PORT` 환경변수에 설정된 포트로 실행
+**참고:**
+
+- 서버는 기본적으로 `localhost:8000`에서 실행됩니다
+- `.env` 파일에서 데이터베이스 연결 정보를 설정해야 합니다
+- PostgreSQL 데이터베이스가 실행 중이어야 합니다 (`docker-compose up -d`)
 
 ---
 
@@ -167,12 +177,30 @@ Django Form은 주로 Admin 패널에서 사용
 - **Message**: 개별 메시지
   - `conversation`: 대화 세션 (ForeignKey)
   - `role`: 역할 ('user' 또는 'assistant')
-  - `content`: 메시지 내용
+  - `content`: 메시지 내용 (암호화 저장)
   - `thinking_process`: 랭그래프 노드 진행 과정 (JSON)
+  - `get_decrypted_content()`: 암호화된 내용 복호화 메서드
+- **SentimentAnalysis**: 감정 분석 결과
+  - `message`: 메시지 (OneToOneField)
+  - `sentiment_type`: 감정 타입 ('positive', 'negative', 'neutral')
+  - `sentiment_score`: 감정 점수 (0.0 ~ 1.0)
+  - `keywords`: 감정 키워드 (JSON)
+  - `analyzed_at`: 분석 시간
+- **DiseaseQuery**: 질환 검색 기록
+  - `message`: 메시지 (ForeignKey)
+  - `disease_name`: 질환명
+  - `searched_at`: 검색 시간
 
 #### Signal
 
+- **encrypt_message_content**: 메시지 저장 전 content 필드 자동 암호화
 - **auto_generate_conversation_title**: 챗봇의 첫 응답 생성 시 대화 제목 자동 생성
+
+#### 보안 기능
+
+- **메시지 암호화**: 모든 메시지 내용은 저장 시 자동으로 암호화됨 (`encryption.py` 사용)
+  - 암호화된 메시지는 `get_decrypted_content()` 메서드로 복호화하여 조회
+  - Signal을 통해 저장 전 자동 암호화 처리
 
 ---
 
@@ -189,12 +217,22 @@ Django Form은 주로 Admin 패널에서 사용
 
 #### API 엔드포인트
 
+**프로필 관리:**
+
 - `GET /profiles/` - 프로필 조회
 - `PUT /profiles/update/` - 프로필 수정 (사용자명 변경)
 - `PUT /profiles/password/` - 비밀번호 변경
 - `DELETE /profiles/delete/` - 계정 삭제
 - `POST /profiles/upload-image/` - 프로필 이미지 업로드
-- `GET /profiles/statistics/` - 사용자 통계 조회
+
+**대시보드 통계 API:**
+
+- `GET /profiles/api/kpi/` - KPI 데이터 (총 대화 횟수, 총 메시지 수)
+- `GET /profiles/api/conversation-frequency/` - 최근 7일 대화 빈도
+- `GET /profiles/api/hourly-pattern/` - 시간대별 대화 패턴 (히트맵)
+- `GET /profiles/api/sentiment-distribution/` - 감정 분포 (파이 차트)
+- `GET /profiles/api/emotion-keywords/` - 감정 키워드 (워드 클라우드)
+- `GET /profiles/api/top-diseases/` - 자주 검색한 질환 TOP 10
 
 #### Serializer
 
