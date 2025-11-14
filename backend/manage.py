@@ -9,6 +9,11 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent  # 프로젝트 루트
 load_dotenv(BASE_DIR / '.env')
 
+# 프로젝트 루트를 sys.path에 추가 (rag 패키지 import를 위해)
+# Python 패키지 구조로 rag.build_graph 같은 형식으로 import 가능
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 
 def main():
     """Run administrative tasks."""
