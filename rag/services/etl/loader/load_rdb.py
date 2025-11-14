@@ -8,7 +8,7 @@ import json
 import psycopg2
 from pathlib import Path
 from typing import List, Dict, Any
-from init_db import get_db_config, get_project_root
+from rag.services.etl.loader.init_db import get_db_config, get_project_root
 
 
 def load_image_metadata(data_file: Path) -> List[Dict[str, Any]]:

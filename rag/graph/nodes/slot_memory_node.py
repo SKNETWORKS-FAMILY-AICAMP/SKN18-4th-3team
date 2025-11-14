@@ -62,6 +62,17 @@ def slot_memory_node(state):
     # 하나라도 False가 있으면 전체가 False가 됩니다.
     all_slots_filled = all(slot_status.values()) if slot_status else False
     
+    # 디버깅: 전체 내용 출력
+    print("\n" + "="*70)
+    print("[slot_memory_node] 전체 슬롯 데이터:")
+    print("="*70)
+    for slot_num in sorted(slot_data.keys()):
+        print(f"\n{slot_num}:")
+        print(f"  {slot_data[slot_num]}")
+    print("\n" + "="*70)
+    print(f"모든 슬롯 충족 여부: {all_slots_filled}")
+    print("="*70 + "\n")
+    
     # 다음 노드에서 사용할 값을 한 번에 돌려줍니다.
     return {
         "slot_data": slot_data,
