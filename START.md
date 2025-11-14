@@ -3,9 +3,10 @@
 ## 목차
 
 - [환경 설정](#환경-설정)
+- [서버 실행](#서버-실행)
 - [RAG ETL 파이프라인](#rag-etl-파이프라인)
   - [1. Extraction (추출)](#1-extraction-추출)
-  - [2. Transform & Chunking (변환 및 청킹)](#2-transform--chunking-변환-및-청킹)
+  - [2. Transform &amp; Chunking (변환 및 청킹)](#2-transform--chunking-변환-및-청킹)
   - [3. Loader (적재)](#3-loader-적재)
 
 ---
@@ -22,7 +23,7 @@ uv venv .venv python3.12
 source .venv/bin/activate
 
 # 의존성 설치
-uv pip install -r requirements.txt
+uv pip install -r docker/requirements.txt
 
 # Playwright 브라우저 설치
 playwright install chromium
@@ -50,6 +51,22 @@ lsof -i :5432
 - 포트 5432가 사용 중이 아닌 경우: `PG_PORT=5432` 사용
 - 포트 5432가 사용 중인 경우: `PG_PORT=5433` 사용
 
+#### Django/React 포트 확인
+
+백엔드와 프론트엔드 서버의 기본 포트 사용 여부를 확인합니다.
+
+```bash
+# 백엔드 포트 확인 (기본: 8000)
+lsof -i :8000
+
+# 프론트엔드 포트 확인 (기본: 3000)
+lsof -i :3000
+```
+
+- 포트가 사용 중이면 `.env` 파일에서 다른 포트 번호로 설정하세요.
+- 백엔드 포트: `DJANGO_PORT` (기본값: 8000)
+- 프론트엔드 포트: `REACT_PORT` 또는 `PORT` (기본값: 3000)
+
 ### 3. 데이터베이스 실행
 
 ```bash
@@ -60,6 +77,59 @@ docker-compose up -d
 ### 4. 데이터베이스 연결 확인
 
 DBeaver 또는 다른 데이터베이스 클라이언트에서 연결 설정을 확인하세요.
+
+---
+
+## 서버 실행
+
+### 1. Django 마이그레이션
+
+```bash
+# 의존성 설치 (프로젝트 루트의 docker/requirements.txt 사용)
+uv pip install -r docker/requirements.txt
+
+# 마이그레이션 파일 생성
+python backend/manage.py makemigrations
+
+# 마이그레이션 실행
+python backend/manage.py migrate
+```
+
+**오류 발생 시:**
+
+마이그레이션 오류가 발생하면 다음 가이드를 참고하세요:
+
+1. `docs/MIGRATION_GUIDE.md` 파일을 읽어보세요.
+2. `docs/fix_migration_history.py` 스크립트를 실행하세요.
+
+```bash
+python docs/fix_migration_history.py
+```
+
+### 3. Django 관리자 계정 생성
+
+```bash
+python backend/manage.py createsuperuser
+```
+
+관리자 계정 생성 후 `http://localhost:8000/admin`에 접속하면 관리자 페이지에 진입할 수 있습니다.
+
+### 4. 프론트엔드 서버 시작
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+### 5. 백엔드 서버 시작
+
+```bash
+cd backend
+python manage.py runserver
+```
+
+서버 실행 후 `http://localhost:{REACT_PORT}` (기본값: 3000)에 접속하면 메인 페이지에 진입할 수 있습니다.
 
 ---
 

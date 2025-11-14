@@ -14,30 +14,6 @@
 
 ---
 
-## 서버 실행
-
-```bash
-# 가상환경 활성화
-source .venv/bin/activate
-
-# 의존성 설치 (프로젝트 루트의 docker/requirements.txt 사용)
-pip install -r ../docker/requirements.txt
-
-# 데이터베이스 마이그레이션
-python manage.py migrate
-
-# 서버 실행
-python manage.py runserver
-```
-
-**참고:**
-
-- 서버는 기본적으로 `localhost:8000`에서 실행됩니다
-- `.env` 파일에서 데이터베이스 연결 정보를 설정해야 합니다
-- PostgreSQL 데이터베이스가 실행 중이어야 합니다 (`docker-compose up -d`)
-
----
-
 ## 프로젝트 구조
 
 ```
