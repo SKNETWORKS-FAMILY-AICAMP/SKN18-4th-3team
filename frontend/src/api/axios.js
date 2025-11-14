@@ -1,9 +1,10 @@
 import axios from "axios";
 
 // Django API URL 설정
-// localhost는 하드코딩, 포트는 환경변수에서 읽기 (기본값: 8000)
-const DJANGO_PORT = process.env.REACT_APP_DJANGO_PORT || "8000";
-const API_URL = `http://localhost:${DJANGO_PORT}`;
+// 환경변수에서만 읽기 (하드코딩 없음)
+const DJANGO_HOST = process.env.REACT_APP_DJANGO_HOST;
+const DJANGO_PORT = process.env.REACT_APP_DJANGO_PORT;
+const API_URL = `http://${DJANGO_HOST}:${DJANGO_PORT}`;
 
 const api = axios.create({
   baseURL: API_URL,

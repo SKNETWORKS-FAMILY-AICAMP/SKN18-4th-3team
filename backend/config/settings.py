@@ -228,5 +228,10 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'apps.chatbot': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',  # 랭그래프 오류 디버깅을 위해 DEBUG 레벨
+            'propagate': False,
+        },
     },
 }

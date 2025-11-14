@@ -6,11 +6,213 @@ from .models import Conversation, Message, SentimentAnalysis
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 
+# 랭그래프 import (Python 패키지 구조 사용)
+try:
+    from rag.build_graph import get_app
+    LANGGRAPH_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: 랭그래프를 import할 수 없습니다: {e}")
+    LANGGRAPH_AVAILABLE = False
+
+
+# 노드 설명 매핑
+NODE_DESCRIPTIONS = {
+    "classify": "질문 분류 중...",
+    "search_vectordb": "관련 정보 검색 중...",
+    "eval": "정보 검증 중...",
+    "sql_search": "데이터베이스 검색 중...",
+    "state_check": "상태 확인 중...",
+    "question": "질문 생성 중...",
+    "slot_memory": "정보 통합 중...",
+    "extract": "증상 추출 중...",
+    "chat_llm": "답변 생성 중...",
+}
+
+# 핵심 노드만 필터링 (사용자에게 표시할 노드)
+KEY_NODES = {
+    "classify", "search_vectordb", "eval", "sql_search",
+    "state_check", "question", "slot_memory", "extract", "chat_llm"
+}
+
+
+def run_langgraph(user_question, conversation_state=None, user_answer=None):
+    """
+    랭그래프를 실행하고 노드 실행 이벤트를 수집하여 thinking_process 생성
+    
+    Args:
+        user_question: 사용자 질문 (최초 질문 또는 답변)
+        conversation_state: 이전 대화 상태 (slot_data, slot_status 등) - 상담형 대화용
+        user_answer: 사용자 답변 (상담형 질문에 대한 답변) - 선택적
+    
+    Returns:
+        tuple: (response_content, thinking_process, bot_question, updated_state)
+        - response_content: 최종 답변 또는 None (상담형 질문인 경우)
+        - thinking_process: 노드 실행 과정
+        - bot_question: 상담형 질문 (question 노드에서 생성된 질문, None일 수 있음)
+        - updated_state: 업데이트된 대화 상태 (다음 호출 시 사용)
+    """
+    if not LANGGRAPH_AVAILABLE:
+        return "챗봇 응답 (랭그래프 연동 필요)", [
+            {"node": "classify", "description": "질문 분류 중...", "order": 1},
+            {"node": "retrieve", "description": "관련 정보 검색 중...", "order": 2},
+            {"node": "generate", "description": "응답 생성 중...", "order": 3}
+        ], None, None
+    
+    try:
+        app = get_app()
+        
+        # 초기 상태 설정
+        initial_state = {
+            "user_question": user_question,
+            "initial_question": user_question,
+        }
+        
+        # 이전 대화 상태 복원 (상담형 대화의 경우)
+        if conversation_state:
+            initial_state.update(conversation_state)
+        
+        # 사용자 답변이 있으면 state에 추가 (상담형 질문에 대한 답변)
+        if user_answer:
+            initial_state["user_answer"] = user_answer
+        
+        # 그래프 실행 및 노드 이벤트 수집
+        thinking_process = []
+        final_answer = None
+        bot_question = None
+        updated_state = None
+        order = 1
+
+        # stream을 사용하여 노드 실행 이벤트 수집 (동기 버전)
+        # LangGraph의 stream은 이벤트를 반환: {node_name: state_dict} 형태
+        # recursion_limit=200: 상담형 대화의 순환 구조 대응 (7개 slot × 3노드 × 반복 + 여유분)
+        try:
+            events = app.stream(initial_state, {"recursion_limit": 200})
+            last_state = None
+            should_break = False  # bot_question이나 final_answer 발견 시 루프 중단 플래그
+
+            for event in events:
+                # bot_question이나 final_answer가 이미 발견되었으면 중단
+                if should_break:
+                    break
+                    
+                # LangGraph의 이벤트 구조 확인
+                # event는 딕셔너리 형태: {"node_name": state_dict}
+                if isinstance(event, dict):
+                    for node_name, state_update in event.items():
+                        # 시스템 노드는 건너뛰기 (__start__, __end__ 등)
+                        if node_name.startswith("__"):
+                            continue
+
+                        # 핵심 노드만 필터링
+                        if node_name in KEY_NODES:
+                            description = NODE_DESCRIPTIONS.get(node_name, f"{node_name} 처리 중...")
+                            thinking_process.append({
+                                "node": node_name,
+                                "description": description,
+                                "order": order
+                            })
+                            order += 1
+
+                        # 상태 업데이트 추적
+                        if isinstance(state_update, dict):
+                            last_state = state_update
+                            
+                            # 상담형 질문 추출 (question 노드에서 생성)
+                            if "bot_question" in state_update and not bot_question:
+                                bot_question = state_update.get("bot_question")
+                                # 상담형 질문인 경우 여기서 멈추고 상태 저장
+                                updated_state = {
+                                    "slot_data": state_update.get("slot_data", {}),
+                                    "slot_status": state_update.get("slot_status", {}),
+                                    "current_slot": state_update.get("current_slot"),
+                                    "initial_question": state_update.get("initial_question", user_question),
+                                    "question_type": state_update.get("question_type"),
+                                }
+                                # bot_question이 생성되었으면 루프 중단
+                                should_break = True
+                                break
+                            
+                            # 최종 답변 추출
+                            if "final_answer" in state_update and not final_answer:
+                                final_answer = state_update.get("final_answer")
+                                # 최종 답변 생성 시 상태도 저장 (필요시)
+                                updated_state = {
+                                    "slot_data": state_update.get("slot_data", {}),
+                                    "slot_status": state_update.get("slot_status", {}),
+                                    "question_type": state_update.get("question_type"),
+                                }
+                                # final_answer가 생성되었으면 루프 중단
+                                should_break = True
+                                break
+                else:
+                    # 이벤트가 딕셔너리가 아닌 경우 (튜플 등)
+                    # 디버깅을 위해 로그 출력
+                    print(f"Warning: 예상치 못한 이벤트 형태: {type(event)}")
+
+            # 최종 답변이 없고 bot_question도 없으면 invoke로 전체 실행 후 결과 추출
+            if not final_answer and not bot_question:
+                final_result = app.invoke(initial_state, {"recursion_limit": 200})
+                if isinstance(final_result, dict):
+                    if "final_answer" in final_result:
+                        final_answer = final_result.get("final_answer")
+                    elif "bot_question" in final_result:
+                        bot_question = final_result.get("bot_question")
+                        updated_state = {
+                            "slot_data": final_result.get("slot_data", {}),
+                            "slot_status": final_result.get("slot_status", {}),
+                            "current_slot": final_result.get("current_slot"),
+                            "initial_question": final_result.get("initial_question", user_question),
+                            "question_type": final_result.get("question_type"),
+                        }
+                    else:
+                        final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+                else:
+                    final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+        except Exception as stream_error:
+            # stream 실패 시 invoke로 폴백
+            print(f"stream 오류: {stream_error}, invoke로 폴백")
+            final_result = app.invoke(initial_state, {"recursion_limit": 200})
+            if isinstance(final_result, dict):
+                if "final_answer" in final_result:
+                    final_answer = final_result.get("final_answer")
+                elif "bot_question" in final_result:
+                    bot_question = final_result.get("bot_question")
+                    updated_state = {
+                        "slot_data": final_result.get("slot_data", {}),
+                        "slot_status": final_result.get("slot_status", {}),
+                        "current_slot": final_result.get("current_slot"),
+                        "initial_question": final_result.get("initial_question", user_question),
+                        "question_type": final_result.get("question_type"),
+                    }
+                else:
+                    final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+            else:
+                final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+        
+        return final_answer, thinking_process, bot_question, updated_state
+        
+    except Exception as e:
+        import traceback
+        error_msg = f"랭그래프 실행 오류: {e}"
+        error_trace = traceback.format_exc()
+        print(error_msg)
+        print(error_trace)
+        
+        # 로깅 (Django 로거 사용)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"랭그래프 실행 오류: {error_msg}")
+        logger.error(f"스택 트레이스: {error_trace}")
+        
+        return f"답변 생성 중 오류가 발생했습니다. (오류: {str(e)})", [
+            {"node": "error", "description": f"오류 발생: {str(e)}", "order": 1}
+        ], None, None
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def chat_view(request):
-    """채팅 메인 페이지 (로그인 사용자는 대화 저장, 게스트는 저장 안됨)"""
+    """채팅 메인 페이지"""
     if request.user.is_authenticated:
         return Response({
             'is_authenticated': True,
@@ -161,6 +363,8 @@ class MessageListCreateView(generics.ListCreateAPIView):
         """사용자 메시지 전송 및 챗봇 응답 생성"""
         conversation_id = self.kwargs['conversation_id']
         content = request.data.get('content')
+        conversation_state = request.data.get('conversation_state')  # 상담형 대화 상태
+        is_answer = request.data.get('is_answer', False)  # 상담형 질문에 대한 답변인지
 
         if not content:
             return Response({'error': '메시지 내용을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -174,38 +378,68 @@ class MessageListCreateView(generics.ListCreateAPIView):
             content=content
         )
 
-        # TODO: 랭그래프 호출 (랭그래프 개발자가 제공하는 함수 사용)
-        # 임시 응답
-        assistant_content = "챗봇 응답 (랭그래프 연동 필요)"
-        thinking_process = [
-            {"node": "classify", "description": "질문 분류 중...", "order": 1},
-            {"node": "retrieve", "description": "관련 정보 검색 중...", "order": 2},
-            {"node": "generate", "description": "응답 생성 중...", "order": 3}
-        ]
-
-        # 챗봇 메시지 저장 (Signal로 대화 제목 자동 생성)
-        assistant_message = Message.objects.create(
-            conversation=conversation,
-            role='assistant',
-            content=assistant_content,
-            thinking_process=thinking_process
+        # 랭그래프 호출 및 thinking_process 생성
+        # 상담형 질문에 대한 답변인 경우 user_answer로 전달
+        user_answer = content if is_answer else None
+        final_answer, thinking_process, bot_question, updated_state = run_langgraph(
+            content if not is_answer else conversation_state.get('initial_question', content),
+            conversation_state=conversation_state,
+            user_answer=user_answer
         )
 
-        return Response({
-            'user_message': {
-                'id': user_message.id,
-                'role': user_message.role,
-                'content': user_message.get_decrypted_content(),  # 복호화된 내용 반환
-                'created_at': user_message.created_at
-            },
-            'assistant_message': {
-                'id': assistant_message.id,
-                'role': assistant_message.role,
-                'content': assistant_message.get_decrypted_content(),  # 복호화된 내용 반환
-                'thinking_process': assistant_message.thinking_process,
-                'created_at': assistant_message.created_at
-            }
-        }, status=status.HTTP_201_CREATED)
+        # 상담형 질문인 경우 (bot_question이 있으면)
+        if bot_question:
+            # 질문만 저장하고 사용자 응답 대기
+            assistant_message = Message.objects.create(
+                conversation=conversation,
+                role='assistant',
+                content=bot_question,  # 상담형 질문을 content로 저장
+                thinking_process=thinking_process
+            )
+            
+            return Response({
+                'user_message': {
+                    'id': user_message.id,
+                    'role': user_message.role,
+                    'content': user_message.get_decrypted_content(),
+                    'created_at': user_message.created_at
+                },
+                'assistant_message': {
+                    'id': assistant_message.id,
+                    'role': assistant_message.role,
+                    'content': assistant_message.get_decrypted_content(),
+                    'thinking_process': assistant_message.thinking_process,
+                    'created_at': assistant_message.created_at
+                },
+                'bot_question': bot_question,  # 상담형 질문
+                'conversation_state': updated_state,  # 다음 호출 시 사용할 상태
+                'requires_answer': True  # 사용자 답변 필요
+            }, status=status.HTTP_201_CREATED)
+        else:
+            # 일반 답변인 경우
+            assistant_message = Message.objects.create(
+                conversation=conversation,
+                role='assistant',
+                content=final_answer or "답변을 생성하는 중 문제가 발생했습니다.",
+                thinking_process=thinking_process
+            )
+
+            return Response({
+                'user_message': {
+                    'id': user_message.id,
+                    'role': user_message.role,
+                    'content': user_message.get_decrypted_content(),
+                    'created_at': user_message.created_at
+                },
+                'assistant_message': {
+                    'id': assistant_message.id,
+                    'role': assistant_message.role,
+                    'content': assistant_message.get_decrypted_content(),
+                    'thinking_process': assistant_message.thinking_process,
+                    'created_at': assistant_message.created_at
+                },
+                'requires_answer': False  # 사용자 답변 불필요
+            }, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
@@ -213,18 +447,34 @@ class MessageListCreateView(generics.ListCreateAPIView):
 def guest_chat_view(request):
     """게스트 사용자 대화 (대화 내용 저장 안됨)"""
     content = request.data.get('content')
-    conversation_history = request.data.get('conversation_history', [])
+    conversation_state = request.data.get('conversation_state')  # 상담형 대화 상태
+    is_answer = request.data.get('is_answer', False)  # 상담형 질문에 대한 답변인지
 
     if not content:
         return Response({'error': '메시지 내용을 입력해주세요.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # TODO: 랭그래프 호출
-    # 임시 응답
-    assistant_content = "챗봇 응답 (랭그래프 연동 필요)"
-    thinking_process = [
-        {"node": "classify", "description": "질문 분류 중...", "order": 1},
-        {"node": "retrieve", "description": "관련 정보 검색 중...", "order": 2},
-        {"node": "generate", "description": "응답 생성 중...", "order": 3}
-    ]
+    # 랭그래프 호출 및 thinking_process 생성
+    # 상담형 질문에 대한 답변인 경우 user_answer로 전달
+    user_answer = content if is_answer else None
+    final_answer, thinking_process, bot_question, updated_state = run_langgraph(
+        content if not is_answer else conversation_state.get('initial_question', content) if conversation_state else content,
+        conversation_state=conversation_state,
+        user_answer=user_answer
+    )
 
-    return Response({'response': assistant_content, 'thinking_process': thinking_process})
+    # 상담형 질문인 경우 (bot_question이 있으면)
+    if bot_question:
+        return Response({
+            'response': bot_question,  # 상담형 질문
+            'thinking_process': thinking_process,
+            'bot_question': bot_question,
+            'conversation_state': updated_state,  # 다음 호출 시 사용할 상태
+            'requires_answer': True  # 사용자 답변 필요
+        })
+    else:
+        # 일반 답변인 경우
+        return Response({
+            'response': final_answer or "답변을 생성하는 중 문제가 발생했습니다.",
+            'thinking_process': thinking_process,
+            'requires_answer': False  # 사용자 답변 불필요
+        })

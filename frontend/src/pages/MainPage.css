@@ -163,6 +163,10 @@
   padding-right: 6px;
   padding-top: 8px;
   margin-top: 60px; /* New Counseling과 검색 사이의 간격 증가 */
+  min-height: 0; /* flexbox 오버플로우 방지 */
+  max-height: calc(
+    100vh - 280px
+  ); /* 사이드바가 전체를 채우지 않도록 최대 높이 제한 */
 }
 
 .sidebar-list::-webkit-scrollbar {
