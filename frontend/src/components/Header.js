@@ -36,9 +36,12 @@ function Header({
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/");
+      // 페이지 새로고침하여 모든 상태 초기화 및 메인 페이지로 이동
+      window.location.href = "/";
     } catch (err) {
       console.error("로그아웃 실패:", err);
+      // 에러가 발생해도 메인 페이지로 이동
+      window.location.href = "/";
     }
   };
 
