@@ -7,19 +7,13 @@ Extract CLI - 크롤링 스크립트 실행 관리
 """
 import asyncio
 import argparse
-import sys
-from pathlib import Path
+import os
 
 # 출력 버퍼링 비활성화 (크롤링 진행 상황 실시간 출력)
-import os
 os.environ['PYTHONUNBUFFERED'] = '1'
 
-# 프로젝트 루트를 sys.path에 추가
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-from services.etl.extract.crawling_faq import main as crawl_faq
-from services.etl.extract.crawling_info import main as crawl_info
+from rag.services.etl.extract.crawling_faq import main as crawl_faq
+from rag.services.etl.extract.crawling_info import main as crawl_info
 
 
 async def run_parallel():

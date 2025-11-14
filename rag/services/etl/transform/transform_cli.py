@@ -24,8 +24,8 @@ from typing import Dict, Any
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Transform 함수 임포트
-from transform_faq import FAQTransformer
-from transform_info import DiseaseDataTransformer
+from rag.services.etl.transform.transform_faq import FAQTransformer
+from rag.services.etl.transform.transform_info import DiseaseDataTransformer
 
 
 # ==============================

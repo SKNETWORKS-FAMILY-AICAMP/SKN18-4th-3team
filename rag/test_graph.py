@@ -58,9 +58,6 @@ def print_node(node_name, state):
     if state.get("extracted_symptoms"):
         print(f"  추출된 증상: {state['extracted_symptoms']}")
     
-    if state.get("counseling_context"):
-        print(f"  상담 컨텍스트: {state['counseling_context'][:100]}...")
-    
     if state.get("final_answer"):
         print(f"  [완료] 최종 답변 생성됨 (길이: {len(state['final_answer'])}자)")
 
