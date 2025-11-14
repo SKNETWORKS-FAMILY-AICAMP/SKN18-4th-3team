@@ -24,6 +24,7 @@ function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -204,39 +205,59 @@ function ChatPage() {
               send
             </span>
           </button>
+
+          {/* 검색 기능 */}
+          <div className="sidebar-search">
+            <input
+              type="text"
+              placeholder="대화 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            <span className="material-symbols-outlined search-icon">search</span>
+          </div>
+
           <div className="sidebar-list">
             {conversations.length === 0 ? (
               <div className="sidebar-empty">대화 기록이 없습니다.</div>
             ) : (
-              conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={`sidebar-item ${
-                    selectedConversation?.id === conv.id ? "active" : ""
-                  }`}
-                  onClick={() => handleConversationClick(conv.id)}
-                >
-                  <strong>{conv.title || "제목 없음"}</strong>
-                  <span className="sidebar-meta">
-                    {conv.updated_at
-                      ? new Date(conv.updated_at).toLocaleString()
-                      : ""}
-                  </span>
-                  <span className="sidebar-snippet">
-                    {conv.last_message_preview || "대화 내용을 요약합니다."}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteConversation(conv.id);
-                    }}
-                    className="sidebar-delete-btn"
-                    aria-label="삭제"
+              conversations
+                .filter((conv) =>
+                  searchQuery
+                    ? conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      conv.last_message_preview?.toLowerCase().includes(searchQuery.toLowerCase())
+                    : true
+                )
+                .map((conv) => (
+                  <div
+                    key={conv.id}
+                    className={`sidebar-item ${
+                      selectedConversation?.id === conv.id ? "active" : ""
+                    }`}
+                    onClick={() => handleConversationClick(conv.id)}
                   >
-                    <span className="material-symbols-outlined">delete</span>
-                  </button>
-                </div>
-              ))
+                    <strong>{conv.title || "제목 없음"}</strong>
+                    <span className="sidebar-meta">
+                      {conv.updated_at
+                        ? new Date(conv.updated_at).toLocaleString()
+                        : ""}
+                    </span>
+                    <span className="sidebar-snippet">
+                      {conv.last_message_preview || "대화 내용을 요약합니다."}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteConversation(conv.id);
+                      }}
+                      className="sidebar-delete-btn"
+                      aria-label="삭제"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
+                ))
             )}
           </div>
         </aside>

@@ -12,6 +12,7 @@ function MainPage() {
   const [user, setUser] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [displayedText, setDisplayedText] = useState("");
   const fullText = useMemo(() => {
     if (isAuthenticated && user?.username) {
@@ -104,31 +105,53 @@ function MainPage() {
                 </span>
               </button>
             )}
+
+            {/* 검색 기능 */}
+            {isAuthenticated && (
+              <div className="sidebar-search">
+                <input
+                  type="text"
+                  placeholder="대화 검색..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                />
+                <span className="material-symbols-outlined search-icon">search</span>
+              </div>
+            )}
+
             <div className="sidebar-list">
               {!isAuthenticated ? (
                 <div className="sidebar-empty">로그인이 필요합니다.</div>
               ) : conversations.length === 0 ? (
                 <div className="sidebar-empty">대화 기록이 없습니다.</div>
               ) : (
-                conversations.map((conv) => (
-                  <button
-                    key={conv.id}
-                    className="sidebar-item"
-                    onClick={() => handleConversationSelect(conv.id)}
-                  >
-                    <strong>{conv.title || "제목 없음"}</strong>
-                    <span className="sidebar-meta">
-                      {conv.updated_at
-                        ? new Date(conv.updated_at).toLocaleString()
-                        : ""}
-                    </span>
-                    <span className="sidebar-snippet">
-                      {conv.last_message_preview ||
-                        conv.last_message?.content ||
-                        "대화 내용을 요약합니다."}
-                    </span>
-                  </button>
-                ))
+                conversations
+                  .filter((conv) =>
+                    searchQuery
+                      ? conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        conv.last_message_preview?.toLowerCase().includes(searchQuery.toLowerCase())
+                      : true
+                  )
+                  .map((conv) => (
+                    <button
+                      key={conv.id}
+                      className="sidebar-item"
+                      onClick={() => handleConversationSelect(conv.id)}
+                    >
+                      <strong>{conv.title || "제목 없음"}</strong>
+                      <span className="sidebar-meta">
+                        {conv.updated_at
+                          ? new Date(conv.updated_at).toLocaleString()
+                          : ""}
+                      </span>
+                      <span className="sidebar-snippet">
+                        {conv.last_message_preview ||
+                          conv.last_message?.content ||
+                          "대화 내용을 요약합니다."}
+                      </span>
+                    </button>
+                  ))
               )}
             </div>
             <div className="sidebar-fade-top" />

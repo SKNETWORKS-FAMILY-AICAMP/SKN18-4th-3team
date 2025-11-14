@@ -60,6 +60,43 @@
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
+/* 사이드바 - 검색 기능 */
+.sidebar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  background: #f8f8f8;
+}
+
+.search-input:focus {
+  border-color: #333;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.search-icon {
+  position: absolute;
+  right: 14px;
+  font-size: 20px;
+  color: #666;
+  pointer-events: none;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
 /* 사이드바 - 대화 목록 */
 .sidebar-list {
   flex: 1;
@@ -69,6 +106,7 @@
   flex-direction: column;
   gap: 12px;
   padding-right: 6px;
+  margin-top: 60px; /* New Counseling과 검색 사이의 간격 증가 */
 }
 
 .sidebar-list::-webkit-scrollbar {

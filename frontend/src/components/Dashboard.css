@@ -1,0 +1,147 @@
+.dashboard {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.dashboard-loading,
+.dashboard-error {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+}
+
+.dashboard-error {
+  color: #f44336;
+}
+
+/* KPI 섹션 */
+.kpi-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.kpi-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 25px;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-card h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  opacity: 0.9;
+}
+
+.kpi-value {
+  font-size: 36px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* 차트 그리드 */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 20px;
+}
+
+.chart-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.chart-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* 파이 차트 */
+.pie-chart-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+/* 히트맵 */
+.heatmap-container {
+  overflow-x: auto;
+}
+
+/* 키워드 클라우드 */
+.keywords-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 20px;
+  min-height: 200px;
+  align-items: center;
+  justify-content: center;
+}
+
+.keyword-item {
+  display: inline-block;
+  font-weight: 600;
+  padding: 5px 10px;
+  transition: transform 0.2s;
+  cursor: default;
+}
+
+.keyword-item:hover {
+  transform: scale(1.1);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card.full-width {
+    grid-column: 1;
+  }
+
+  .pie-chart-container {
+    flex-direction: column;
+  }
+}

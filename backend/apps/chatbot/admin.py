@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Conversation, Message
+from .models import Conversation, Message, SentimentAnalysis, DiseaseQuery
 
 
 class MessageInline(admin.TabularInline):
@@ -37,3 +37,35 @@ class MessageAdmin(admin.ModelAdmin):
     def content_preview(self, obj):
         return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
     content_preview.short_description = '내용'
+
+
+@admin.register(SentimentAnalysis)
+class SentimentAnalysisAdmin(admin.ModelAdmin):
+    """감정 분석 Admin"""
+    list_display = ['id', 'message_preview', 'sentiment_type', 'sentiment_score', 'analyzed_at']
+    list_filter = ['sentiment_type', 'analyzed_at']
+    search_fields = ['message__content']
+    readonly_fields = ['message', 'sentiment_type', 'sentiment_score', 'keywords', 'analyzed_at']
+    ordering = ['-analyzed_at']
+    date_hierarchy = 'analyzed_at'
+
+    def message_preview(self, obj):
+        content = obj.message.content[:30]
+        return content + '...' if len(obj.message.content) > 30 else content
+    message_preview.short_description = '메시지'
+
+
+@admin.register(DiseaseQuery)
+class DiseaseQueryAdmin(admin.ModelAdmin):
+    """질환 검색 Admin"""
+    list_display = ['id', 'disease_name', 'message_preview', 'searched_at']
+    list_filter = ['disease_name', 'searched_at']
+    search_fields = ['disease_name', 'message__content']
+    readonly_fields = ['message', 'disease_name', 'searched_at']
+    ordering = ['-searched_at']
+    date_hierarchy = 'searched_at'
+
+    def message_preview(self, obj):
+        content = obj.message.content[:30]
+        return content + '...' if len(obj.message.content) > 30 else content
+    message_preview.short_description = '메시지'

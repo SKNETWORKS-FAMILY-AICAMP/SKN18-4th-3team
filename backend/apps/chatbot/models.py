@@ -135,3 +135,70 @@ def auto_generate_conversation_title(sender, instance, created, **kwargs):
                 title = f"{user_content} - {assistant_content}"
                 conversation.title = title
                 conversation.save(update_fields=['title'])
+
+
+# 챗 검색 기능.
+
+
+
+class SentimentAnalysis(models.Model):
+    """
+    메시지의 감정 분석 결과를 저장하는 모델
+    HuggingFace 모델을 통해 자동으로 분석됨
+    """
+    SENTIMENT_TYPES = [
+        ('positive', '긍정'),
+        ('negative', '부정'),
+        ('neutral', '중립'),
+    ]
+
+    message = models.OneToOneField(
+        Message,
+        on_delete=models.CASCADE,
+        related_name='sentiment',
+        verbose_name='메시지'
+    )
+    sentiment_type = models.CharField(
+        max_length=20,
+        choices=SENTIMENT_TYPES,
+        verbose_name='감정 타입'
+    )
+    sentiment_score = models.FloatField(verbose_name='감정 점수')  # 0.0 ~ 1.0
+    keywords = models.JSONField(default=list, verbose_name='감정 키워드')  # 감정을 나타내는 키워드들
+    analyzed_at = models.DateTimeField(auto_now_add=True, verbose_name='분석 시간')
+
+    class Meta:
+        db_table = 'sentiment_analysis'
+        verbose_name = '감정 분석'
+        verbose_name_plural = '감정 분석들'
+        ordering = ['-analyzed_at']
+
+    def __str__(self):
+        return f"{self.message.id} - {self.sentiment_type} ({self.sentiment_score:.2f})"
+
+
+class DiseaseQuery(models.Model):
+    """
+    사용자가 검색한 질환 정보를 저장하는 모델
+    "우울증", "불안장애" 등의 질환명을 추출하여 저장
+    """
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        related_name='disease_queries',
+        verbose_name='메시지'
+    )
+    disease_name = models.CharField(max_length=100, verbose_name='질환명')
+    searched_at = models.DateTimeField(auto_now_add=True, verbose_name='검색 시간')
+
+    class Meta:
+        db_table = 'disease_query'
+        verbose_name = '질환 검색'
+        verbose_name_plural = '질환 검색들'
+        ordering = ['-searched_at']
+        indexes = [
+            models.Index(fields=['disease_name', '-searched_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.disease_name} - {self.searched_at.strftime('%Y-%m-%d %H:%M')}"

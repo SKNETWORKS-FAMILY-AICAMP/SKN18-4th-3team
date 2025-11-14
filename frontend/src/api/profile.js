@@ -40,8 +40,38 @@ export const uploadProfileImage = async (imageFile) => {
   return response.data;
 };
 
-// 사용자 통계 조회
-export const getUserStatistics = async () => {
-  const response = await api.get('/profiles/statistics/');
+// 대시보드 API - 7가지 차트
+export const getKpiData = async () => {
+  const response = await api.get('/profiles/api/kpi/');
+  return response.data;
+};
+
+export const getConversationFrequency = async () => {
+  const response = await api.get('/profiles/api/conversation-frequency/');
+  return response.data;
+};
+
+export const getHourlyPattern = async () => {
+  const response = await api.get('/profiles/api/hourly-pattern/');
+  return response.data;
+};
+
+export const getSentimentDistribution = async () => {
+  const response = await api.get('/profiles/api/sentiment-distribution/');
+  return response.data;
+};
+
+export const getEmotionKeywords = async () => {
+  const response = await api.get('/profiles/api/emotion-keywords/');
+  return response.data;
+};
+
+export const getTopDiseases = async () => {
+  const response = await api.get('/profiles/api/top-diseases/');
+  return response.data;
+};
+
+export const getDiseaseTrends = async () => {
+  const response = await api.get('/profiles/api/disease-trends/');
   return response.data;
 };
