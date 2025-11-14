@@ -1,0 +1,461 @@
+/* ===================================
+   SignupPage - 전체 레이아웃
+   =================================== */
+.signup-page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #fafafa 0%, #f0f4ff 50%, #fff0f8 100%);
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  overflow: hidden;
+}
+
+/* ===================================
+   메인 영역 (Main)
+   =================================== */
+.signup-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 80px; /* 헤더 높이 */
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.signup-container {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* ===================================
+   사인업 박스 (Signup Box)
+   =================================== */
+.signup-box {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 60px 80px;
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(150, 150, 200, 0.15);
+  border: 1px solid rgba(200, 200, 220, 0.2);
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signup-box form {
+  position: relative;
+  min-height: 500px;
+  padding-bottom: 20px;
+}
+
+/* ===================================
+   스텝 인디케이터 (Step Indicator)
+   =================================== */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 130px;
+  margin-bottom: 50px;
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.step-indicator span {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  color: #999;
+  transition: all 0.3s;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.step-indicator span.active {
+  background-color: #000;
+  color: white;
+}
+
+/* 스텝 연결선 */
+.step-indicator span:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 0px);
+  top: 50%;
+  width: 130px;
+  height: 3px;
+  background-color: #e0e0e0;
+  z-index: 1;
+  transform: translateY(-50%);
+  transition: background-color 0.3s;
+}
+
+.step-indicator span:nth-child(1).active:has(+ span.active)::after {
+  background-color: #000;
+}
+
+.step-indicator span:nth-child(2).active:has(+ span.active)::after {
+  background-color: #000;
+}
+
+/* ===================================
+   Step 1: 아바타 & 사용자명
+   =================================== */
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.avatar-preview {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6dd5fa 0%, #c4b5fd 50%, #fca5f1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(109, 213, 250, 0.3);
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  color: white;
+  font-size: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 150px;
+  height: 150px;
+  background: white;
+  border-radius: 50%;
+}
+
+.btn-image-select {
+  padding: 8px 20px !important;
+  background: #000 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 20px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: inline-block;
+}
+
+.btn-image-select:hover {
+  background: #333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ===================================
+   폼 그룹 (Form Group)
+   =================================== */
+.form-group {
+  margin-bottom: 30px;
+}
+
+.input-with-check {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  color: #000;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.check-icon {
+  color: #27ae60;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #000;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #333;
+}
+
+.form-group input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
+.field-message {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.field-message.error {
+  color: #e74c3c;
+}
+
+/* ===================================
+   에러 메시지 (Error Message)
+   =================================== */
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+  margin-bottom: 15px;
+  text-align: center;
+  padding: 10px;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 8px;
+}
+
+/* ===================================
+   버튼 그룹 (Button Group)
+   =================================== */
+.button-group {
+  position: static;
+  margin-top: 40px;
+  min-height: 60px;
+}
+
+/* Next 버튼 */
+.btn-next {
+  padding: 15px 30px;
+  background: #c4b5fd;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(196, 181, 253, 0.3);
+}
+
+.signup-box form:first-of-type .btn-next {
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+}
+
+.signup-box form .button-group .btn-next {
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+}
+
+.btn-next:hover {
+  background: #b3a0fc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(196, 181, 253, 0.4);
+}
+
+/* Back 버튼 */
+.btn-back {
+  padding: 15px 30px;
+  background: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 25px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.signup-box form .button-group .btn-back {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+}
+
+.btn-back:hover {
+  background: #d0d0d0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Signup 버튼 */
+.btn-signup {
+  flex: 1;
+  padding: 15px 30px;
+  background: #c4b5fd;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(196, 181, 253, 0.3);
+}
+
+.btn-signup:hover {
+  background: #b3a0fc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(196, 181, 253, 0.4);
+}
+
+/* Step 3 버튼 위치 조정 */
+.signup-box form:last-of-type .button-group {
+  margin-top: 0;
+  position: static;
+}
+
+.signup-box form:last-of-type .signup-summary {
+  margin-bottom: 80px;
+}
+
+.signup-box form:last-of-type .button-group .btn-signup {
+  position: absolute;
+  top: 200px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  transform: none;
+}
+
+.signup-box form:last-of-type .button-group .btn-signup:hover {
+  transform: translateY(-2px);
+}
+
+.signup-box form:last-of-type .button-group .btn-back {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+}
+
+/* ===================================
+   Step 3: 가입 정보 확인
+   =================================== */
+.signup-summary {
+  background-color: #f9f9f9;
+  padding: 30px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.signup-summary h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #000;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.summary-item {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.summary-item label {
+  font-weight: 700;
+  color: #000;
+  min-width: 150px;
+  font-size: 16px;
+}
+
+.summary-item span {
+  color: #333;
+  font-size: 16px;
+}
+
+/* ===================================
+   반응형 (Responsive)
+   =================================== */
+@media (max-width: 768px) {
+  .signup-main {
+    padding: 16px;
+  }
+
+  .signup-box {
+    padding: 40px 30px;
+  }
+
+  .step-indicator {
+    gap: 80px;
+  }
+
+  .step-indicator span:not(:last-child)::after {
+    width: 80px;
+  }
+
+  .avatar-preview {
+    width: 150px;
+    height: 150px;
+  }
+
+  .avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    font-size: 70px;
+  }
+
+  .form-group label {
+    font-size: 16px;
+  }
+
+  .form-group input {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .btn-next,
+  .btn-back,
+  .btn-signup {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+
+  .summary-item label {
+    min-width: 120px;
+    font-size: 14px;
+  }
+
+  .summary-item span {
+    font-size: 14px;
+  }
+}

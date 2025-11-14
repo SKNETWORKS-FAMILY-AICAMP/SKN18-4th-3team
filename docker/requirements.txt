@@ -2,6 +2,13 @@
 django==5.2.8
 python-dotenv==1.1.1
 
+# Django REST Framework & CORS
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# Image Processing (프로필 이미지)
+Pillow==10.2.0
+
 # LangChain 패키지
 langchain==0.3.26 # LangChain 메인 패키지
 langchain-core==0.3.74 # LangChain 코어 기능
@@ -21,3 +28,6 @@ openai>=1.0.0
 
 # 크롤링
 playwright==1.55.0
+
+# 암호화 (대화 내용 암호화)
+cryptography==43.0.3

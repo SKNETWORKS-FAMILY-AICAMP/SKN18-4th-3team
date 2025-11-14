@@ -15,10 +15,13 @@ from dotenv import load_dotenv
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# settings.py는 backend/config/에 있으므로 parent.parent는 backend/, parent.parent.parent는 프로젝트 루트
+BACKEND_DIR = Path(__file__).resolve().parent.parent  # backend/
+PROJECT_ROOT = BACKEND_DIR.parent  # 프로젝트 루트
+BASE_DIR = BACKEND_DIR  # Django의 BASE_DIR은 backend/로 유지
 
-# .env 파일 로드
-load_dotenv(BASE_DIR / '.env')
+# .env 파일 로드 (프로젝트 루트 기준)
+load_dotenv(PROJECT_ROOT / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -42,11 +45,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Third-party apps
+    'rest_framework',
+    'corsheaders',
+    # Custom apps
+    'apps.users',
+    'apps.chatbot',
+    'apps.profiles',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS 처리 (리액트 연동)
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -59,8 +70,8 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
+        'DIRS': [],  # 템플릿 삭제 (리액트 사용)
+        'APP_DIRS': True,  # Admin 패널용
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
@@ -79,8 +90,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('PG_DB'),
+        'USER': os.getenv('PG_USER'),
+        'PASSWORD': os.getenv('PG_PASSWORD'),
+        'HOST': 'localhost',
+        'PORT': os.getenv('PG_PORT', '5432'),
     }
 }
 
@@ -107,21 +122,116 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko-kr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# Static files (리액트에서 관리하므로 제거)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+# STATICFILES_DIRS = [BASE_DIR / 'static']  # 리액트에서 관리
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom user model
+AUTH_USER_MODEL = 'users.User'
+
+# Authentication settings
+LOGIN_URL = '/users/login/'
+LOGIN_REDIRECT_URL = '/chatbot/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Media files (프로필 이미지 업로드용)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = PROJECT_ROOT / 'media'  # 프로젝트 루트의 media 디렉토리
+
+# Django REST Framework 설정
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
+# CORS 설정 (리액트와 Django 연동)
+REACT_PORT = os.getenv('REACT_PORT', '3000')  # 기본값 3000
+CORS_ALLOWED_ORIGINS = [
+    f'http://localhost:{REACT_PORT}',
+    f'http://127.0.0.1:{REACT_PORT}',
+]
+CORS_ALLOW_CREDENTIALS = True  # 쿠키/세션 허용
+
+# CSRF 설정 (리액트 연동)
+CSRF_TRUSTED_ORIGINS = [
+    f'http://localhost:{REACT_PORT}',
+    f'http://127.0.0.1:{REACT_PORT}',
+]
+
+# 로깅 설정 (프론트엔드 요청 로그 기록)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': BACKEND_DIR / 'logs' / 'django.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',  # 모든 요청 로그 기록
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'apps.chatbot': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',  # 랭그래프 오류 디버깅을 위해 DEBUG 레벨
+            'propagate': False,
+        },
+    },
+}
