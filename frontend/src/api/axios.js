@@ -4,6 +4,19 @@ import axios from "axios";
 // 환경변수에서만 읽기 (하드코딩 없음)
 const DJANGO_HOST = process.env.REACT_APP_DJANGO_HOST;
 const DJANGO_PORT = process.env.REACT_APP_DJANGO_PORT;
+
+// 환경변수 검증
+if (!DJANGO_HOST || !DJANGO_PORT) {
+  const errorMsg =
+    `환경변수 오류: REACT_APP_DJANGO_HOST=${DJANGO_HOST}, REACT_APP_DJANGO_PORT=${DJANGO_PORT}\n` +
+    `frontend/.env 파일에 다음 변수가 설정되어 있는지 확인하세요:\n` +
+    `REACT_APP_DJANGO_HOST=localhost\n` +
+    `REACT_APP_DJANGO_PORT=8080\n` +
+    `환경변수 변경 후에는 npm start를 재시작해야 합니다.`;
+  console.error(errorMsg);
+  throw new Error(errorMsg);
+}
+
 const API_URL = `http://${DJANGO_HOST}:${DJANGO_PORT}`;
 
 const api = axios.create({

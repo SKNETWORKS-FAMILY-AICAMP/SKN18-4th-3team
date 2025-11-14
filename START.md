@@ -3,6 +3,8 @@
 ## 목차
 
 - [환경 설정](#환경-설정)
+  - [macOS](#macos)
+  - [Windows](#windows)
 - [서버 실행](#서버-실행)
 - [RAG ETL 파이프라인](#rag-etl-파이프라인)
   - [1. Extraction (추출)](#1-extraction-추출)
@@ -12,6 +14,8 @@
 ---
 
 ## 환경 설정
+
+### macOS
 
 ### 1. 가상환경 설치 및 의존성 설치
 
@@ -34,6 +38,7 @@ playwright install chromium
 ```bash
 # 환경 변수 파일 복사
 cp .env.sample .env
+cp frontend/.env.sample frontend/.env
 ```
 
 `.env` 파일에서 다음 항목을 설정하세요:
@@ -43,9 +48,18 @@ cp .env.sample .env
 
 #### PostgreSQL 포트 확인
 
+**macOS:**
+
 ```bash
 # 포트 5432 사용 여부 확인
 lsof -i :5432
+```
+
+**Windows:**
+
+```cmd
+# 포트 5432 사용 여부 확인
+netstat -ano | findstr :5432
 ```
 
 - 포트 5432가 사용 중이 아닌 경우: `PG_PORT=5432` 사용
@@ -55,12 +69,24 @@ lsof -i :5432
 
 백엔드와 프론트엔드 서버의 기본 포트 사용 여부를 확인합니다.
 
+**macOS:**
+
 ```bash
 # 백엔드 포트 확인 (기본: 8000)
 lsof -i :8000
 
 # 프론트엔드 포트 확인 (기본: 3000)
 lsof -i :3000
+```
+
+**Windows:**
+
+```cmd
+# 백엔드 포트 확인 (기본: 8000)
+netstat -ano | findstr :8000
+
+# 프론트엔드 포트 확인 (기본: 3000)
+netstat -ano | findstr :3000
 ```
 
 - 포트가 사용 중이면 `.env` 파일에서 다른 포트 번호로 설정하세요.
@@ -77,6 +103,116 @@ docker-compose up -d
 ### 4. 데이터베이스 연결 확인
 
 DBeaver 또는 다른 데이터베이스 클라이언트에서 연결 설정을 확인하세요.
+
+---
+
+### Windows
+
+### 1. 가상환경 설치 및 의존성 설치
+
+**PowerShell 또는 CMD 사용:**
+
+```powershell
+# 가상환경 생성
+uv venv .venv python3.12
+
+# 가상환경 활성화 (PowerShell)
+.venv\Scripts\Activate.ps1
+
+# 가상환경 활성화 (CMD)
+.venv\Scripts\activate.bat
+
+# 의존성 설치
+uv pip install -r docker/requirements.txt
+
+# Playwright 브라우저 설치
+playwright install chromium
+```
+
+**참고:**
+
+- PowerShell에서 실행 정책 오류가 발생하면: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+- CMD에서는 `activate.bat` 사용
+
+### 2. 환경 변수 설정
+
+```powershell
+# 환경 변수 파일 복사
+Copy-Item .env.sample .env
+Copy-Item frontend\.env.sample frontend\.env
+```
+
+또는 CMD:
+
+```cmd
+copy .env.sample .env
+copy frontend\.env.sample frontend\.env
+```
+
+`.env` 파일에서 다음 항목을 설정하세요:
+
+- **API 키**: OpenAI API 키 설정
+- **PostgreSQL 설정**: 데이터베이스 연결 정보 설정
+
+#### PostgreSQL 포트 확인
+
+**Windows:**
+
+```cmd
+# 포트 5432 사용 여부 확인
+netstat -ano | findstr :5432
+```
+
+- 포트 5432가 사용 중이 아닌 경우: `PG_PORT=5432` 사용
+- 포트 5432가 사용 중인 경우: `PG_PORT=5433` 사용
+
+#### Django/React 포트 확인
+
+백엔드와 프론트엔드 서버의 기본 포트 사용 여부를 확인합니다.
+
+**Windows:**
+
+```cmd
+# 백엔드 포트 확인 (기본: 8000)
+netstat -ano | findstr :8000
+
+# 프론트엔드 포트 확인 (기본: 3000)
+netstat -ano | findstr :3000
+```
+
+- 포트가 사용 중이면 `.env` 파일에서 다른 포트 번호로 설정하세요.
+- 백엔드 포트: `DJANGO_PORT` (기본값: 8000)
+- 프론트엔드 포트: `REACT_PORT` 또는 `PORT` (기본값: 3000)
+
+### 3. 데이터베이스 실행
+
+```powershell
+# Docker Compose로 PostgreSQL 실행
+docker-compose up -d
+```
+
+### 4. 데이터베이스 연결 확인
+
+DBeaver 또는 다른 데이터베이스 클라이언트에서 연결 설정을 확인하세요.
+
+**Windows 환경변수 주의사항:**
+
+1. **`frontend/.env` 파일 필수 확인:**
+
+   ```
+   PORT=3001
+   REACT_APP_DJANGO_HOST=localhost
+   REACT_APP_DJANGO_PORT=8080
+   ```
+
+2. **환경변수 형식:**
+
+   - 공백 없이 작성: `REACT_APP_DJANGO_PORT=8080` (O)
+   - 공백 있으면 안됨: `REACT_APP_DJANGO_PORT= 8080` (X)
+
+3. **환경변수 변경 후:**
+   - React 서버를 완전히 종료(Ctrl+C) 후 재시작해야 합니다.
+   - 브라우저 캐시 문제가 있으면 시크릿 모드로 테스트하세요.
 
 ---
 
