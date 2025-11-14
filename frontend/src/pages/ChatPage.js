@@ -191,13 +191,13 @@ function ChatPage() {
     <div className="chat-page">
       {/* Header - 페이지 최상단 고정 */}
       <Header
-        showSidebar={isAuthenticated}
+        showSidebar={true}
         onToggleSidebar={handleToggleSidebar}
         isSidebarOpen={isSidebarOpen}
       />
 
-      {/* Sidebar - 로그인 사용자만, 헤더 아래 고정 */}
-      {isAuthenticated && isSidebarOpen && (
+      {/* Sidebar - 헤더 아래 고정 */}
+      {isSidebarOpen && (
         <aside className="chat-sidebar">
           <button onClick={handleNewConversation} className="sidebar-new">
             New Counseling
@@ -206,27 +206,39 @@ function ChatPage() {
             </span>
           </button>
 
-          {/* 검색 기능 */}
-          <div className="sidebar-search">
-            <input
-              type="text"
-              placeholder="대화 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            <span className="material-symbols-outlined search-icon">search</span>
-          </div>
+          {/* 검색 기능 - 로그인 사용자만 */}
+          {isAuthenticated && (
+            <div className="sidebar-search">
+              <input
+                type="text"
+                placeholder="대화 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+              <span className="material-symbols-outlined search-icon">
+                search
+              </span>
+            </div>
+          )}
 
           <div className="sidebar-list">
-            {conversations.length === 0 ? (
+            {!isAuthenticated ? (
+              <div className="sidebar-empty">
+                게스트 모드: 대화 내용이 저장되지 않습니다.
+              </div>
+            ) : conversations.length === 0 ? (
               <div className="sidebar-empty">대화 기록이 없습니다.</div>
             ) : (
               conversations
                 .filter((conv) =>
                   searchQuery
-                    ? conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      conv.last_message_preview?.toLowerCase().includes(searchQuery.toLowerCase())
+                    ? conv.title
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      conv.last_message_preview
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase())
                     : true
                 )
                 .map((conv) => (
@@ -247,24 +259,35 @@ function ChatPage() {
                     {conv.sentiment_percentages && (
                       <div className="sidebar-sentiment-bar">
                         <div className="sentiment-tooltip">
-                          <strong>나쁨</strong> {conv.sentiment_percentages.negative}% | <strong>중립</strong> {conv.sentiment_percentages.neutral}% | <strong>기쁨</strong> {conv.sentiment_percentages.positive}%
+                          <strong>나쁨</strong>{" "}
+                          {conv.sentiment_percentages.negative}% |{" "}
+                          <strong>중립</strong>{" "}
+                          {conv.sentiment_percentages.neutral}% |{" "}
+                          <strong>기쁨</strong>{" "}
+                          {conv.sentiment_percentages.positive}%
                         </div>
                         {conv.sentiment_percentages.negative > 0 && (
                           <div
                             className="sentiment-segment negative"
-                            style={{ width: `${conv.sentiment_percentages.negative}%` }}
+                            style={{
+                              width: `${conv.sentiment_percentages.negative}%`,
+                            }}
                           />
                         )}
                         {conv.sentiment_percentages.neutral > 0 && (
                           <div
                             className="sentiment-segment neutral"
-                            style={{ width: `${conv.sentiment_percentages.neutral}%` }}
+                            style={{
+                              width: `${conv.sentiment_percentages.neutral}%`,
+                            }}
                           />
                         )}
                         {conv.sentiment_percentages.positive > 0 && (
                           <div
                             className="sentiment-segment positive"
-                            style={{ width: `${conv.sentiment_percentages.positive}%` }}
+                            style={{
+                              width: `${conv.sentiment_percentages.positive}%`,
+                            }}
                           />
                         )}
                       </div>
@@ -287,11 +310,7 @@ function ChatPage() {
       )}
 
       {/* Main Chat Area - 헤더 아래, 사이드바 옆 */}
-      <main
-        className={`chat-main ${
-          isAuthenticated && isSidebarOpen ? "sidebar-open" : ""
-        }`}
-      >
+      <main className={`chat-main ${isSidebarOpen ? "sidebar-open" : ""}`}>
         <div className="messages-container">
           {messages.length === 0 ? (
             <div className="welcome-message">

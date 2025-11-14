@@ -71,11 +71,7 @@ function MainPage() {
   };
 
   const handleStart = () => {
-    if (isAuthenticated) {
-      navigate("/chat");
-    } else {
-      navigate("/login");
-    }
+    navigate("/chat");
   };
 
   const handleNewCounseling = () => {
@@ -97,14 +93,12 @@ function MainPage() {
       <div className="main-body">
         {isSidebarOpen && (
           <aside className={`main-sidebar ${isSidebarOpen ? "open" : ""}`}>
-            {isAuthenticated && (
-              <button className="sidebar-new" onClick={handleNewCounseling}>
-                New Counseling
-                <span className="material-symbols-outlined paper-plane-icon">
-                  send
-                </span>
-              </button>
-            )}
+            <button className="sidebar-new" onClick={handleNewCounseling}>
+              New Counseling
+              <span className="material-symbols-outlined paper-plane-icon">
+                send
+              </span>
+            </button>
 
             {/* 검색 기능 */}
             {isAuthenticated && (
@@ -116,21 +110,29 @@ function MainPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="search-input"
                 />
-                <span className="material-symbols-outlined search-icon">search</span>
+                <span className="material-symbols-outlined search-icon">
+                  search
+                </span>
               </div>
             )}
 
             <div className="sidebar-list">
               {!isAuthenticated ? (
-                <div className="sidebar-empty">로그인이 필요합니다.</div>
+                <div className="sidebar-empty">
+                  게스트 모드: 대화 내용이 저장되지 않습니다.
+                </div>
               ) : conversations.length === 0 ? (
                 <div className="sidebar-empty">대화 기록이 없습니다.</div>
               ) : (
                 conversations
                   .filter((conv) =>
                     searchQuery
-                      ? conv.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        conv.last_message_preview?.toLowerCase().includes(searchQuery.toLowerCase())
+                      ? conv.title
+                          ?.toLowerCase()
+                          .includes(searchQuery.toLowerCase()) ||
+                        conv.last_message_preview
+                          ?.toLowerCase()
+                          .includes(searchQuery.toLowerCase())
                       : true
                   )
                   .map((conv) => (
@@ -149,24 +151,35 @@ function MainPage() {
                       {conv.sentiment_percentages && (
                         <div className="sidebar-sentiment-bar">
                           <div className="sentiment-tooltip">
-                            <strong>나쁨</strong> {conv.sentiment_percentages.negative}% | <strong>중립</strong> {conv.sentiment_percentages.neutral}% | <strong>기쁨</strong> {conv.sentiment_percentages.positive}%
+                            <strong>나쁨</strong>{" "}
+                            {conv.sentiment_percentages.negative}% |{" "}
+                            <strong>중립</strong>{" "}
+                            {conv.sentiment_percentages.neutral}% |{" "}
+                            <strong>기쁨</strong>{" "}
+                            {conv.sentiment_percentages.positive}%
                           </div>
                           {conv.sentiment_percentages.negative > 0 && (
                             <div
                               className="sentiment-segment negative"
-                              style={{ width: `${conv.sentiment_percentages.negative}%` }}
+                              style={{
+                                width: `${conv.sentiment_percentages.negative}%`,
+                              }}
                             />
                           )}
                           {conv.sentiment_percentages.neutral > 0 && (
                             <div
                               className="sentiment-segment neutral"
-                              style={{ width: `${conv.sentiment_percentages.neutral}%` }}
+                              style={{
+                                width: `${conv.sentiment_percentages.neutral}%`,
+                              }}
                             />
                           )}
                           {conv.sentiment_percentages.positive > 0 && (
                             <div
                               className="sentiment-segment positive"
-                              style={{ width: `${conv.sentiment_percentages.positive}%` }}
+                              style={{
+                                width: `${conv.sentiment_percentages.positive}%`,
+                              }}
                             />
                           )}
                         </div>
