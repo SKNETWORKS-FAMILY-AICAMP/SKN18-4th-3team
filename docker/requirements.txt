@@ -13,6 +13,7 @@ Pillow==10.2.0
 langchain==0.3.26 # LangChain 메인 패키지
 langchain-core==0.3.74 # LangChain 코어 기능
 langchain-community==0.3.27 # LangChain 커뮤니티 확장
+langchain_openai==0.2.8 #LangChain OpenAI
 langchain-text-splitters==0.3.8 # LangChain 텍스트 분할 도구
 langchain-experimental==0.3.4 # 새로운 기능을 미리 사용해볼 수 있는 패키지
 langsmith==0.4.14 # LangChain 앱 디버깅, 테스트, 모니터링 도구
