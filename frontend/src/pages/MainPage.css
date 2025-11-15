@@ -419,6 +419,10 @@
   display: inline;
   opacity: 0;
   animation: fadeIn 0.25s ease-in forwards;
+  /* 부모의 그라디언트가 전체 텍스트에 적용되도록 투명하게 설정 */
+  /* background 속성은 지정하지 않아 부모의 그라디언트가 전체에 적용됨 */
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .message-text .greeting-text {
