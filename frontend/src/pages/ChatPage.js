@@ -168,6 +168,7 @@ function ChatPage() {
             role: "assistant",
             content: data.response,
             thinking_process: data.thinking_process,
+            related_images: data.related_images || [],
             created_at: new Date().toISOString(),
           };
 
@@ -359,6 +360,36 @@ function ChatPage() {
                     </div>
                   )}
                   <div className="message-content">{msg.content}</div>
+                  
+                  {/* Related Images */}
+                  {msg.role === "assistant" && msg.related_images && msg.related_images.length > 0 && (
+                    <div className="related-images">
+                      <div className="related-images-grid">
+                        {msg.related_images.map((image, imgIdx) => (
+                          <div key={imgIdx} className="related-image-item">
+                            <img 
+                              src={image.image_url} 
+                              alt={image.alt_text || image.disease_name || '관련 이미지'}
+                              className="related-image"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                            <div className="image-error" style={{display: 'none'}}>
+                              이미지를 불러올 수 없습니다
+                            </div>
+                            {(image.caption || image.alt_text) && (
+                              <div className="image-caption">
+                                {image.caption || image.alt_text}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="message-time">
                     {new Date(msg.created_at).toLocaleTimeString("ko-KR", {
                       hour: "2-digit",
