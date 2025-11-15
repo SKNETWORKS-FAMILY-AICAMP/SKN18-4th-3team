@@ -300,7 +300,7 @@
   border-radius: 5px;
   font-size: 7px;
   white-space: nowrap;
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
   transition: opacity 0.2s ease;
   z-index: 1000;
