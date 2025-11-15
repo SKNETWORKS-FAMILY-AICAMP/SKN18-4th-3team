@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   getKpiData,
   getConversationFrequency,
@@ -18,9 +19,20 @@ function Dashboard() {
   const [topDiseases, setTopDiseases] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const location = useLocation();
 
+  // 페이지가 보일 때마다 데이터 새로고침 (대화 후 대시보드로 돌아올 때 반영)
   useEffect(() => {
     loadDashboardData();
+  }, [location.pathname]);
+
+  // 페이지 포커스 시에도 데이터 새로고침 (다른 탭에서 돌아올 때)
+  useEffect(() => {
+    const handleFocus = () => {
+      loadDashboardData();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
   const loadDashboardData = async () => {
