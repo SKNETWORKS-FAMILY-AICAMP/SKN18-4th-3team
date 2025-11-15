@@ -45,19 +45,18 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
         user_answer: 사용자 답변 (상담형 질문에 대한 답변) - 선택적
     
     Returns:
-        tuple: (response_content, thinking_process, bot_question, updated_state, related_images)
+        tuple: (response_content, thinking_process, bot_question, updated_state)
         - response_content: 최종 답변 또는 None (상담형 질문인 경우)
         - thinking_process: 노드 실행 과정
         - bot_question: 상담형 질문 (question 노드에서 생성된 질문, None일 수 있음)
         - updated_state: 업데이트된 대화 상태 (다음 호출 시 사용)
-        - related_images: 관련 이미지 메타데이터 리스트
     """
     if not LANGGRAPH_AVAILABLE:
         return "챗봇 응답 (랭그래프 연동 필요)", [
             {"node": "classify", "description": "질문 분류 중...", "order": 1},
             {"node": "retrieve", "description": "관련 정보 검색 중...", "order": 2},
             {"node": "generate", "description": "응답 생성 중...", "order": 3}
-        ], None, None, []
+        ], None, None
     
     try:
         app = get_app()
@@ -81,121 +80,47 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
         final_answer = None
         bot_question = None
         updated_state = None
-        related_images = []
         order = 1
 
-        # stream을 사용하여 노드 실행 이벤트 수집 (동기 버전)
-        # LangGraph의 stream은 이벤트를 반환: {node_name: state_dict} 형태
+        # invoke를 사용하여 그래프 실행 (stream 대신 사용하여 GeneratorExit 방지)
         # recursion_limit=200: 상담형 대화의 순환 구조 대응 (7개 slot × 3노드 × 반복 + 여유분)
         try:
-            events = app.stream(initial_state, {"recursion_limit": 200})
-            last_state = None
-            should_break = False  # bot_question이나 final_answer 발견 시 루프 중단 플래그
-
-            try:
-                for event in events:
-                    # bot_question이나 final_answer가 이미 발견되었으면 중단
-                    if should_break:
-                        break
-                    
-                # LangGraph의 이벤트 구조 확인
-                # event는 딕셔너리 형태: {"node_name": state_dict}
-                if isinstance(event, dict):
-                    for node_name, state_update in event.items():
-                        # 시스템 노드는 건너뛰기 (__start__, __end__ 등)
-                        if node_name.startswith("__"):
-                            continue
-
-                        # 핵심 노드만 필터링
-                        if node_name in KEY_NODES:
-                            description = NODE_DESCRIPTIONS.get(node_name, f"{node_name} 처리 중...")
-                            thinking_process.append({
-                                "node": node_name,
-                                "description": description,
-                                "order": order
-                            })
-                            order += 1
-
-                        # 상태 업데이트 추적
-                        if isinstance(state_update, dict):
-                            last_state = state_update
-                            
-                            # 관련 이미지 추출 (sql_search 노드에서 생성)
-                            if "related_images" in state_update and state_update.get("related_images"):
-                                related_images = state_update.get("related_images", [])
-                            
-                            # 상담형 질문 추출 (question 노드에서 생성)
-                            if "bot_question" in state_update and not bot_question:
-                                bot_question = state_update.get("bot_question")
-                                # 상담형 질문인 경우 여기서 멈추고 상태 저장
-                                updated_state = {
-                                    "slot_data": state_update.get("slot_data", {}),
-                                    "slot_status": state_update.get("slot_status", {}),
-                                    "current_slot": state_update.get("current_slot"),
-                                    "initial_question": state_update.get("initial_question", user_question),
-                                    "question_type": state_update.get("question_type"),
-                                }
-                                # bot_question이 생성되었으면 루프 중단
-                                should_break = True
-                                break
-                            
-                            # 최종 답변 추출
-                            if "final_answer" in state_update and not final_answer:
-                                final_answer = state_update.get("final_answer")
-                                # 관련 이미지도 함께 추출
-                                if "related_images" in state_update:
-                                    related_images = state_update.get("related_images", [])
-                                # 최종 답변 생성 시 상태도 저장 (필요시)
-                                updated_state = {
-                                    "slot_data": state_update.get("slot_data", {}),
-                                    "slot_status": state_update.get("slot_status", {}),
-                                    "question_type": state_update.get("question_type"),
-                                }
-                                # final_answer가 생성되었으면 루프 중단
-                                should_break = True
-                                break
-                else:
-                    # 이벤트가 딕셔너리가 아닌 경우 (튜플 등)
-                    # 디버깅을 위해 로그 출력
-                    print(f"Warning: 예상치 못한 이벤트 형태: {type(event)}")
-            finally:
-                # 제너레이터를 명시적으로 닫아서 GeneratorExit 방지
-                if hasattr(events, 'close'):
-                    events.close()
-
-            # 최종 답변이 없고 bot_question도 없으면 invoke로 전체 실행 후 결과 추출
-            if not final_answer and not bot_question:
-                final_result = app.invoke(initial_state, {"recursion_limit": 200})
-                if isinstance(final_result, dict):
-                    if "final_answer" in final_result:
-                        final_answer = final_result.get("final_answer")
-                        # 관련 이미지도 함께 추출
-                        if "related_images" in final_result:
-                            related_images = final_result.get("related_images", [])
-                    elif "bot_question" in final_result:
-                        bot_question = final_result.get("bot_question")
-                        updated_state = {
-                            "slot_data": final_result.get("slot_data", {}),
-                            "slot_status": final_result.get("slot_status", {}),
-                            "current_slot": final_result.get("current_slot"),
-                            "initial_question": final_result.get("initial_question", user_question),
-                            "question_type": final_result.get("question_type"),
-                        }
-                    else:
-                        final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-                else:
-                    final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-        except Exception as stream_error:
-            # stream 실패 시 invoke로 폴백
-            print(f"stream 오류: {stream_error}, invoke로 폴백")
+            # invoke로 전체 실행
             final_result = app.invoke(initial_state, {"recursion_limit": 200})
+            
             if isinstance(final_result, dict):
-                if "final_answer" in final_result:
-                    final_answer = final_result.get("final_answer")
-                    # 관련 이미지도 함께 추출
-                    if "related_images" in final_result:
-                        related_images = final_result.get("related_images", [])
-                elif "bot_question" in final_result:
+                # thinking_process는 간단하게 구성 (실제 노드 실행 순서는 추적 안 함)
+                question_type = final_result.get("question_type", "").lower()
+                
+                # 질문 타입에 따라 thinking_process 구성
+                if question_type == "counseling":
+                    thinking_process = [
+                        {"node": "classify", "description": "질문 분류 중...", "order": 1},
+                        {"node": "state_check", "description": "상태 확인 중...", "order": 2},
+                    ]
+                    if final_result.get("bot_question"):
+                        thinking_process.append({"node": "question", "description": "질문 생성 중...", "order": 3})
+                    else:
+                        thinking_process.extend([
+                            {"node": "slot_memory", "description": "정보 통합 중...", "order": 3},
+                            {"node": "extract", "description": "증상 추출 중...", "order": 4},
+                            {"node": "search_vectordb", "description": "관련 정보 검색 중...", "order": 5},
+                            {"node": "chat_llm", "description": "답변 생성 중...", "order": 6},
+                        ])
+                else:
+                    thinking_process = [
+                        {"node": "classify", "description": "질문 분류 중...", "order": 1},
+                        {"node": "search_vectordb", "description": "관련 정보 검색 중...", "order": 2},
+                        {"node": "eval", "description": "정보 검증 중...", "order": 3},
+                    ]
+                    if final_result.get("related_images"):
+                        thinking_process.append({"node": "sql_search", "description": "데이터베이스 검색 중...", "order": 4})
+                        thinking_process.append({"node": "chat_llm", "description": "답변 생성 중...", "order": 5})
+                    else:
+                        thinking_process.append({"node": "chat_llm", "description": "답변 생성 중...", "order": 4})
+                
+                # 상담형 질문 추출
+                if "bot_question" in final_result:
                     bot_question = final_result.get("bot_question")
                     updated_state = {
                         "slot_data": final_result.get("slot_data", {}),
@@ -204,12 +129,33 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
                         "initial_question": final_result.get("initial_question", user_question),
                         "question_type": final_result.get("question_type"),
                     }
+                # 최종 답변 추출
+                elif "final_answer" in final_result:
+                    final_answer = final_result.get("final_answer")
+                    # 관련 이미지도 함께 추출
+                    if "related_images" in final_result:
+                        related_images = final_result.get("related_images", [])
+                    updated_state = {
+                        "slot_data": final_result.get("slot_data", {}),
+                        "slot_status": final_result.get("slot_status", {}),
+                        "question_type": final_result.get("question_type"),
+                    }
                 else:
                     final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
             else:
                 final_answer = "답변을 생성하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+                
+        except Exception as invoke_error:
+            # invoke 실패 시 에러 처리
+            print(f"invoke 오류: {invoke_error}")
+            import traceback
+            traceback.print_exc()
+            final_answer = f"답변 생성 중 오류가 발생했습니다. (오류: {str(invoke_error)})"
+            thinking_process = [
+                {"node": "error", "description": f"오류 발생: {str(invoke_error)}", "order": 1}
+            ]
         
-        return final_answer, thinking_process, bot_question, updated_state, related_images
+        return final_answer, thinking_process, bot_question, updated_state
         
     except Exception as e:
         import traceback
@@ -226,7 +172,7 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
         
         return f"답변 생성 중 오류가 발생했습니다. (오류: {str(e)})", [
             {"node": "error", "description": f"오류 발생: {str(e)}", "order": 1}
-        ], None, None, []
+        ], None, None
 
 
 @api_view(['GET'])
@@ -401,7 +347,7 @@ class MessageListCreateView(generics.ListCreateAPIView):
         # 랭그래프 호출 및 thinking_process 생성
         # 상담형 질문에 대한 답변인 경우 user_answer로 전달
         user_answer = content if is_answer else None
-        final_answer, thinking_process, bot_question, updated_state, related_images = run_langgraph(
+        final_answer, thinking_process, bot_question, updated_state = run_langgraph(
             content if not is_answer else conversation_state.get('initial_question', content),
             conversation_state=conversation_state,
             user_answer=user_answer
@@ -456,7 +402,6 @@ class MessageListCreateView(generics.ListCreateAPIView):
                     'role': assistant_message.role,
                     'content': assistant_message.get_decrypted_content(),
                     'thinking_process': assistant_message.thinking_process,
-                    'related_images': related_images,  # 관련 이미지 추가
                     'created_at': assistant_message.created_at
                 },
                 'requires_answer': False  # 사용자 답변 불필요
@@ -477,7 +422,7 @@ def guest_chat_view(request):
     # 랭그래프 호출 및 thinking_process 생성
     # 상담형 질문에 대한 답변인 경우 user_answer로 전달
     user_answer = content if is_answer else None
-    final_answer, thinking_process, bot_question, updated_state, related_images = run_langgraph(
+    final_answer, thinking_process, bot_question, updated_state = run_langgraph(
         content if not is_answer else conversation_state.get('initial_question', content) if conversation_state else content,
         conversation_state=conversation_state,
         user_answer=user_answer
@@ -497,6 +442,5 @@ def guest_chat_view(request):
         return Response({
             'response': final_answer or "답변을 생성하는 중 문제가 발생했습니다.",
             'thinking_process': thinking_process,
-            'related_images': related_images,  # 관련 이미지 추가
             'requires_answer': False  # 사용자 답변 불필요
         })

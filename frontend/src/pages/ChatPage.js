@@ -28,6 +28,12 @@ function ChatPage() {
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [conversationState, setConversationState] = useState(null);
+  const [requiresAnswer, setRequiresAnswer] = useState(false);
+  const resetConversationFlow = () => {
+    setConversationState(null);
+    setRequiresAnswer(false);
+  };
 
   useEffect(() => {
     loadChatInfo();
@@ -76,6 +82,7 @@ function ChatPage() {
       const data = await getConversationDetail(conversationId);
       setSelectedConversation(data);
       setMessages(data.messages);
+      resetConversationFlow();
     } catch (err) {
       console.error("대화 세션 로드 실패:", err);
     }
@@ -85,6 +92,7 @@ function ChatPage() {
     // 대화 세션은 실제 메시지 전송 시 생성되므로 여기서는 초기화만
     setSelectedConversation(null);
     setMessages([]);
+    resetConversationFlow();
   };
 
   const handleDeleteConversation = async (conversationId) => {
@@ -95,6 +103,7 @@ function ChatPage() {
       if (selectedConversation?.id === conversationId) {
         setSelectedConversation(null);
         setMessages([]);
+        resetConversationFlow();
       }
     } catch (err) {
       console.error("대화 삭제 실패:", err);
@@ -113,6 +122,8 @@ function ChatPage() {
     setIsLoading(true);
     setIsStopped(false);
     const messageContent = inputMessage;
+    const isAnswerMode = requiresAnswer;
+    const statePayload = conversationState;
     setInputMessage("");
 
     try {
@@ -123,7 +134,7 @@ function ChatPage() {
           content: messageContent,
           created_at: new Date().toISOString(),
         };
-        setMessages([...messages, userMessage]);
+        setMessages((prev) => [...prev, userMessage]);
 
         if (!selectedConversation) {
           // 대화 세션이 없으면 먼저 생성하지 않고, 메시지 전송 시 백엔드에서 자동 생성되도록
@@ -131,24 +142,37 @@ function ChatPage() {
           const tempConv = await createConversation();
           setSelectedConversation(tempConv);
 
-          const data = await sendMessage(tempConv.id, messageContent);
+          const data = await sendMessage(
+            tempConv.id,
+            messageContent,
+            statePayload,
+            isAnswerMode
+          );
           if (!isStopped) {
-            // 사용자-에이전트 한쌍이 생성되었으므로 대화 목록 갱신
-            await loadConversations();
-            // 실제 생성된 대화 세션으로 업데이트
             const updatedConvs = await getConversations();
+            setConversations(updatedConvs);
             const actualConv =
               updatedConvs.find((c) => c.id === tempConv.id) || tempConv;
             setSelectedConversation(actualConv);
-            setMessages([userMessage, data.assistant_message]);
+            if (data?.assistant_message) {
+              setMessages((prev) => [...prev, data.assistant_message]);
+            }
+            setConversationState(data?.conversation_state || null);
+            setRequiresAnswer(!!data?.requires_answer);
           }
         } else {
           const data = await sendMessage(
             selectedConversation.id,
-            messageContent
+            messageContent,
+            statePayload,
+            isAnswerMode
           );
           if (!isStopped) {
-            setMessages([...messages, userMessage, data.assistant_message]);
+            if (data?.assistant_message) {
+              setMessages((prev) => [...prev, data.assistant_message]);
+            }
+            setConversationState(data?.conversation_state || null);
+            setRequiresAnswer(!!data?.requires_answer);
             loadConversations(); // 대화 목록 갱신
           }
         }
@@ -160,20 +184,26 @@ function ChatPage() {
           created_at: new Date().toISOString(),
         };
         const newHistory = [...guestHistory, userMessage];
-        setMessages([...messages, userMessage]);
+        setMessages((prev) => [...prev, userMessage]);
 
         if (!isStopped) {
-          const data = await sendGuestMessage(messageContent, guestHistory);
+          const data = await sendGuestMessage(
+            messageContent,
+            statePayload,
+            isAnswerMode,
+            guestHistory
+          );
           const assistantMessage = {
             role: "assistant",
             content: data.response,
             thinking_process: data.thinking_process,
-            related_images: data.related_images || [],
             created_at: new Date().toISOString(),
           };
 
           setMessages((prev) => [...prev, assistantMessage]);
           setGuestHistory([...newHistory, assistantMessage]);
+          setConversationState(data?.conversation_state || null);
+          setRequiresAnswer(!!data?.requires_answer);
         }
       }
     } catch (err) {
@@ -360,36 +390,6 @@ function ChatPage() {
                     </div>
                   )}
                   <div className="message-content">{msg.content}</div>
-                  
-                  {/* Related Images */}
-                  {msg.role === "assistant" && msg.related_images && msg.related_images.length > 0 && (
-                    <div className="related-images">
-                      <div className="related-images-grid">
-                        {msg.related_images.map((image, imgIdx) => (
-                          <div key={imgIdx} className="related-image-item">
-                            <img 
-                              src={image.image_url} 
-                              alt={image.alt_text || image.disease_name || '관련 이미지'}
-                              className="related-image"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
-                              }}
-                            />
-                            <div className="image-error" style={{display: 'none'}}>
-                              이미지를 불러올 수 없습니다
-                            </div>
-                            {(image.caption || image.alt_text) && (
-                              <div className="image-caption">
-                                {image.caption || image.alt_text}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
                   <div className="message-time">
                     {new Date(msg.created_at).toLocaleTimeString("ko-KR", {
                       hour: "2-digit",

@@ -31,13 +31,35 @@ export const deleteConversation = async (conversationId) => {
 };
 
 // 메시지 전송 (로그인 사용자)
-export const sendMessage = async (conversationId, content) => {
-  const response = await api.post(`/chatbot/api/conversations/${conversationId}/messages/`, { content });
+export const sendMessage = async (
+  conversationId,
+  content,
+  conversationState = null,
+  isAnswer = false
+) => {
+  const response = await api.post(
+    `/chatbot/api/conversations/${conversationId}/messages/`,
+    {
+      content,
+      conversation_state: conversationState,
+      is_answer: isAnswer,
+    }
+  );
   return response.data;
 };
 
 // 게스트 채팅
-export const sendGuestMessage = async (content, conversationHistory = []) => {
-  const response = await api.post('/chatbot/api/chat/', { content, conversation_history: conversationHistory });
+export const sendGuestMessage = async (
+  content,
+  conversationState = null,
+  isAnswer = false,
+  conversationHistory = []
+) => {
+  const response = await api.post('/chatbot/api/chat/', {
+    content,
+    conversation_state: conversationState,
+    is_answer: isAnswer,
+    conversation_history: conversationHistory,
+  });
   return response.data;
 };
