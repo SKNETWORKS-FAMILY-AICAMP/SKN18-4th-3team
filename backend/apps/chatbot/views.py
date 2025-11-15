@@ -45,18 +45,19 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
         user_answer: 사용자 답변 (상담형 질문에 대한 답변) - 선택적
     
     Returns:
-        tuple: (response_content, thinking_process, bot_question, updated_state)
+        tuple: (response_content, thinking_process, bot_question, updated_state, related_images)
         - response_content: 최종 답변 또는 None (상담형 질문인 경우)
         - thinking_process: 노드 실행 과정
         - bot_question: 상담형 질문 (question 노드에서 생성된 질문, None일 수 있음)
         - updated_state: 업데이트된 대화 상태 (다음 호출 시 사용)
+        - related_images: sql_search_node에서 조회한 이미지 메타데이터 리스트
     """
     if not LANGGRAPH_AVAILABLE:
         return "챗봇 응답 (랭그래프 연동 필요)", [
             {"node": "classify", "description": "질문 분류 중...", "order": 1},
             {"node": "retrieve", "description": "관련 정보 검색 중...", "order": 2},
             {"node": "generate", "description": "응답 생성 중...", "order": 3}
-        ], None, None
+        ], None, None, []
     
     try:
         app = get_app()
@@ -80,6 +81,7 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
         final_answer = None
         bot_question = None
         updated_state = None
+        related_images = []
         order = 1
 
         # invoke를 사용하여 그래프 실행 (stream 대신 사용하여 GeneratorExit 방지)
@@ -133,8 +135,7 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
                 elif "final_answer" in final_result:
                     final_answer = final_result.get("final_answer")
                     # 관련 이미지도 함께 추출
-                    if "related_images" in final_result:
-                        related_images = final_result.get("related_images", [])
+                    related_images = final_result.get("related_images", []) if "related_images" in final_result else []
                     updated_state = {
                         "slot_data": final_result.get("slot_data", {}),
                         "slot_status": final_result.get("slot_status", {}),
@@ -155,7 +156,7 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
                 {"node": "error", "description": f"오류 발생: {str(invoke_error)}", "order": 1}
             ]
         
-        return final_answer, thinking_process, bot_question, updated_state
+        return final_answer, thinking_process, bot_question, updated_state, related_images
         
     except Exception as e:
         import traceback
@@ -172,7 +173,7 @@ def run_langgraph(user_question, conversation_state=None, user_answer=None):
         
         return f"답변 생성 중 오류가 발생했습니다. (오류: {str(e)})", [
             {"node": "error", "description": f"오류 발생: {str(e)}", "order": 1}
-        ], None, None
+        ], None, None, []
 
 
 @api_view(['GET'])
@@ -286,7 +287,8 @@ class ConversationDetailView(generics.RetrieveDestroyAPIView):
             'role': msg.role,
             'content': msg.get_decrypted_content(),  # 복호화된 내용 반환
             'thinking_process': msg.thinking_process,
-            'created_at': msg.created_at
+            'created_at': msg.created_at,
+            'related_images': msg.related_images or []
         } for msg in conversation.messages.all().order_by('created_at')]
 
         return Response({
@@ -321,7 +323,8 @@ class MessageListCreateView(generics.ListCreateAPIView):
             'role': msg.role,
             'content': msg.get_decrypted_content(),  # 복호화된 내용 반환
             'thinking_process': msg.thinking_process,
-            'created_at': msg.created_at
+            'created_at': msg.created_at,
+            'related_images': msg.related_images or []
         } for msg in queryset]
         return Response({'count': len(messages), 'results': messages})
 
@@ -347,7 +350,7 @@ class MessageListCreateView(generics.ListCreateAPIView):
         # 랭그래프 호출 및 thinking_process 생성
         # 상담형 질문에 대한 답변인 경우 user_answer로 전달
         user_answer = content if is_answer else None
-        final_answer, thinking_process, bot_question, updated_state = run_langgraph(
+        final_answer, thinking_process, bot_question, updated_state, related_images = run_langgraph(
             content if not is_answer else conversation_state.get('initial_question', content),
             conversation_state=conversation_state,
             user_answer=user_answer
@@ -375,11 +378,13 @@ class MessageListCreateView(generics.ListCreateAPIView):
                     'role': assistant_message.role,
                     'content': assistant_message.get_decrypted_content(),
                     'thinking_process': assistant_message.thinking_process,
+                    'related_images': assistant_message.related_images or [],
                     'created_at': assistant_message.created_at
                 },
                 'bot_question': bot_question,  # 상담형 질문
                 'conversation_state': updated_state,  # 다음 호출 시 사용할 상태
-                'requires_answer': True  # 사용자 답변 필요
+                'requires_answer': True,  # 사용자 답변 필요
+                'related_images': []
             }, status=status.HTTP_201_CREATED)
         else:
             # 일반 답변인 경우
@@ -387,7 +392,8 @@ class MessageListCreateView(generics.ListCreateAPIView):
                 conversation=conversation,
                 role='assistant',
                 content=final_answer or "답변을 생성하는 중 문제가 발생했습니다.",
-                thinking_process=thinking_process
+                thinking_process=thinking_process,
+                related_images=related_images or []
             )
 
             return Response({
@@ -402,9 +408,11 @@ class MessageListCreateView(generics.ListCreateAPIView):
                     'role': assistant_message.role,
                     'content': assistant_message.get_decrypted_content(),
                     'thinking_process': assistant_message.thinking_process,
+                    'related_images': assistant_message.related_images or [],
                     'created_at': assistant_message.created_at
                 },
-                'requires_answer': False  # 사용자 답변 불필요
+                'requires_answer': False,  # 사용자 답변 불필요
+                'related_images': assistant_message.related_images or []
             }, status=status.HTTP_201_CREATED)
 
 
@@ -422,7 +430,7 @@ def guest_chat_view(request):
     # 랭그래프 호출 및 thinking_process 생성
     # 상담형 질문에 대한 답변인 경우 user_answer로 전달
     user_answer = content if is_answer else None
-    final_answer, thinking_process, bot_question, updated_state = run_langgraph(
+    final_answer, thinking_process, bot_question, updated_state, related_images = run_langgraph(
         content if not is_answer else conversation_state.get('initial_question', content) if conversation_state else content,
         conversation_state=conversation_state,
         user_answer=user_answer
@@ -435,12 +443,14 @@ def guest_chat_view(request):
             'thinking_process': thinking_process,
             'bot_question': bot_question,
             'conversation_state': updated_state,  # 다음 호출 시 사용할 상태
-            'requires_answer': True  # 사용자 답변 필요
+            'requires_answer': True,  # 사용자 답변 필요
+            'related_images': []
         })
     else:
         # 일반 답변인 경우
         return Response({
             'response': final_answer or "답변을 생성하는 중 문제가 발생했습니다.",
             'thinking_process': thinking_process,
-            'requires_answer': False  # 사용자 답변 불필요
+            'requires_answer': False,  # 사용자 답변 불필요
+            'related_images': related_images or []
         })

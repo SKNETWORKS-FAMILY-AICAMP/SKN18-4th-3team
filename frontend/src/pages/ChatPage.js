@@ -13,6 +13,41 @@ import { buildAbsoluteMediaUrl } from "../utils/media";
 import Header from "../components/Header";
 import "./ChatPage.css";
 
+const RelatedImageCard = ({ image, index }) => {
+  const [hasError, setHasError] = useState(false);
+  const imageUrl = buildAbsoluteMediaUrl(
+    image?.image_url || image?.url || image?.imageUrl
+  );
+  const altText =
+    image?.alt_text ||
+    image?.caption ||
+    image?.disease_name ||
+    `관련 이미지 ${index + 1}`;
+
+  const handleError = () => setHasError(true);
+
+  return (
+    <div className="related-image-item">
+      {!hasError && imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={altText}
+          className="related-image"
+          onError={handleError}
+        />
+      ) : (
+        <div className="image-error">이미지를 불러오지 못했습니다.</div>
+      )}
+      {(image?.disease_name || image?.caption) && (
+        <div className="image-caption">
+          {image?.disease_name && <strong>{image.disease_name}</strong>}
+          {image?.caption && <p>{image.caption}</p>}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function ChatPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -197,6 +232,7 @@ function ChatPage() {
             role: "assistant",
             content: data.response,
             thinking_process: data.thinking_process,
+            related_images: data.related_images || [],
             created_at: new Date().toISOString(),
           };
 
@@ -396,6 +432,22 @@ function ChatPage() {
                       minute: "2-digit",
                     })}
                   </div>
+                  {msg.role === "assistant" &&
+                    msg.related_images &&
+                    msg.related_images.length > 0 && (
+                      <div className="related-images">
+                        <div className="related-images-title">관련 이미지</div>
+                        <div className="related-images-grid">
+                          {msg.related_images.map((image, imageIdx) => (
+                            <RelatedImageCard
+                              key={`${msg.id || idx}-related-${imageIdx}`}
+                              image={image}
+                              index={imageIdx}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
             ))
