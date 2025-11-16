@@ -38,6 +38,8 @@ def answer_node(state):
 
     return {
         "user_question": user_answer,  # state_check_node에서 사용 (입력으로 전달)
+        "user_answer": None,           # 답변 처리 완료 후 초기화 (무한 루프 방지)
         "slot_data": slot_data,        # 업데이트된 slot 데이터 (누적)       
         "slot_status": slot_status,    # 업데이트된 slot 상태
     }
+ 

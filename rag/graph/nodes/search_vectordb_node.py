@@ -54,7 +54,7 @@ def search_vectordb_node(state):
             # 각 키워드별로 검색 (top_k=3으로 줄여서 여러 키워드 검색)
             for symptom in extracted_symptoms:
                 chunks = vector_store.search(
-                    query=symptom, top_k=3, threshold=0.5
+                    query=symptom, top_k=3, threshold=0.3
                 )
                 
                 # 중복 제거하면서 추가
@@ -70,7 +70,7 @@ def search_vectordb_node(state):
         else:
             # 정보형이거나 키워드가 1개이면 기존 방식대로
             retrieved_chunks = vector_store.search(
-                query=user_question, top_k=5, threshold=0.5
+                query=user_question, top_k=5, threshold=0.3
             )
 
     except Exception as e:

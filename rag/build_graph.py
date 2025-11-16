@@ -116,15 +116,17 @@ def build_graph():
         route_after_state_check,
         {
             "question": "question",
-            "slot_memory": "slot_memory"
+            "slot_memory": "slot_memory",
+            "answer": "answer"
         }
     )
-    workflow.add_edge("question", "answer")
+    # question 노드는 bot_question을 생성하고 종료 (사용자 응답 대기)
+    workflow.add_edge("question", END)
+    # answer 노드는 사용자 답변을 받아 state_check로 돌아감
     workflow.add_edge("answer", "state_check")
     
     # 모든 slot 충족 시 팬아웃
-    workflow.add_edge("slot_memory", "extract")
-    workflow.add_edge("slot_memory", "chat_llm")
+    workflow.add_edge("slot_memory", "extract")  # extract → search → eval → chat으로 직렬 처리
     workflow.add_edge("extract", "search_vectordb")
     
     # 4. 최종 답변 후 종료

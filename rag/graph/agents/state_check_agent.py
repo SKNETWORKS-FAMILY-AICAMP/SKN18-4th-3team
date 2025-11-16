@@ -14,7 +14,7 @@ state_check_node 실행 후 slot 충족 여부에 따라 다음 노드로 라우
 
 import json
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 
 
 def extract_slot_info(user_input, slot_status):
@@ -124,9 +124,14 @@ def route_after_state_check(state):
     라우팅 함수
     
     Returns:
+        "answer": user_answer가 있으면 (사용자가 질문에 답변한 경우)
         "slot_memory": 모든 slot 충족(7개 모두 True)
         "question": 미충족 slot 존재(하나라도 False)
     """
+    # user_answer가 있으면 answer 노드로 (사용자가 질문에 답변한 경우)
+    if state.get("user_answer"):
+        return "answer"
+    
     slot_status = state.get("slot_status", {})
 
     # 모두 채워지면 채워진 state 반환

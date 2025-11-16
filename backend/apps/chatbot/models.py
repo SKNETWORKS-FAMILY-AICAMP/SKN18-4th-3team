@@ -69,6 +69,12 @@ class Message(models.Model):
         verbose_name='사고 과정',
         help_text='랭그래프 노드 진행 과정: [{"node": "classify", "description": "질문 분류 중...", "order": 1}, ...]'
     )
+    related_images = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='관련 이미지',
+        help_text='검증된 청크 기반으로 조회된 이미지 메타데이터 리스트'
+    )
 
     class Meta:
         db_table = 'messages'
