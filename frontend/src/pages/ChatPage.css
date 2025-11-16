@@ -103,7 +103,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
-  flex-direction: column-reverse; /* 아래에서 위로 쌓이도록 */
+  flex-direction: column; /* 위에서 아래로 쌓이도록 */
   gap: 12px;
   padding-right: 6px;
   margin-top: 60px; /* New Counseling과 검색 사이의 간격 증가 */
@@ -161,7 +161,7 @@
 
 .sidebar-item strong {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   color: #1a1a1a;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -193,7 +193,6 @@
   position: relative;
   display: flex;
   width: calc(100% + 20px); /* 양쪽에 여유 공간 */
-  margin-left: -10px; /* 중앙 정렬 */
   height: 8px;
   border-radius: 4px;
   background: #f0f0f0;
