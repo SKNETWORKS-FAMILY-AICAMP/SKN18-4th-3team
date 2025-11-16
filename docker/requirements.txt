@@ -31,3 +31,7 @@ playwright==1.55.0
 
 # 암호화 (대화 내용 암호화)
 cryptography==43.0.3
+
+transformers==4.57.1
+torch==2.9.1
+sentencepiece==0.2.1
