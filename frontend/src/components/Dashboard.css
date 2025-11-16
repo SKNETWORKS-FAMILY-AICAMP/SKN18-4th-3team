@@ -110,6 +110,15 @@
   padding: 20px;
 }
 
+.pie-chart-svg {
+  width: 200px;
+  height: 200px;
+}
+
+.pie-chart-svg circle {
+  transition: stroke-dasharray 0.3s ease;
+}
+
 .pie-legend {
   display: flex;
   flex-direction: column;

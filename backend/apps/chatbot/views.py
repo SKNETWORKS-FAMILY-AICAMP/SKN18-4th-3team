@@ -2,9 +2,10 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .models import Conversation, Message, SentimentAnalysis
+from .models import Conversation, Message, SentimentAnalysis, DiseaseQuery
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
+from .utils import detect_diseases_in_text
 
 # 랭그래프 import (Python 패키지 구조 사용)
 try:
@@ -340,6 +341,8 @@ class MessageListCreateView(generics.ListCreateAPIView):
             content=content
         )
 
+        detected_diseases = set(detect_diseases_in_text(content))
+
         # 랭그래프 호출 및 thinking_process 생성
         # 상담형 질문에 대한 답변인 경우 user_answer로 전달
         user_answer = content if is_answer else None
@@ -348,6 +351,12 @@ class MessageListCreateView(generics.ListCreateAPIView):
             conversation_state=conversation_state,
             user_answer=user_answer
         )
+
+        if detected_diseases:
+            DiseaseQuery.objects.bulk_create([
+                DiseaseQuery(message=user_message, disease_name=disease)
+                for disease in detected_diseases
+            ])
 
         # 상담형 질문인 경우 (bot_question이 있으면)
         if bot_question:
