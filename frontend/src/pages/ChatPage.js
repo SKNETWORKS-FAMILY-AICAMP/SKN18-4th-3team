@@ -61,6 +61,7 @@ function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef(null);
+  const sidebarListRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [conversationState, setConversationState] = useState(null);
@@ -85,6 +86,20 @@ function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 사이드바가 열릴 때 리스트 상단으로 스크롤
+  useEffect(() => {
+    if (isSidebarOpen && sidebarListRef.current) {
+      sidebarListRef.current.scrollTop = 0;
+    }
+  }, [isSidebarOpen]);
+
+  // 대화 목록이 업데이트될 때 리스트 상단으로 스크롤
+  useEffect(() => {
+    if (isSidebarOpen && sidebarListRef.current) {
+      sidebarListRef.current.scrollTop = 0;
+    }
+  }, [conversations, isSidebarOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -289,7 +304,7 @@ function ChatPage() {
             </div>
           )}
 
-          <div className="sidebar-list">
+          <div className="sidebar-list" ref={sidebarListRef}>
             {!isAuthenticated ? (
               <div className="sidebar-empty">
                 게스트 모드: 대화 내용이 저장되지 않습니다.

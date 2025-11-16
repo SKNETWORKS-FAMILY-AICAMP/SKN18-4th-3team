@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from .encryption import encrypt_content, decrypt_content
+import threading
 
 
 class Conversation(models.Model):
@@ -141,6 +142,74 @@ def auto_generate_conversation_title(sender, instance, created, **kwargs):
                 title = f"{user_content} - {assistant_content}"
                 conversation.title = title
                 conversation.save(update_fields=['title'])
+
+
+# Signal: 랭그래프 완료 후(assistant 메시지 저장 후) 사용자 메시지 감정 분석
+@receiver(post_save, sender=Message)
+def analyze_sentiment_after_assistant_response(sender, instance, created, **kwargs):
+    """
+    랭그래프가 완전히 끝난 후(assistant 메시지 저장 후) 
+    해당 대화의 아직 감정 분석이 안 된 사용자 메시지들을 비동기로 감정 분석
+    대화 진행 속도에 지장이 없도록 백그라운드 스레드로 처리
+    """
+    if created and instance.role == 'assistant':
+        # 백그라운드 스레드로 감정 분석 수행 (대화 진행 속도에 지장 없도록)
+        conversation_id = instance.conversation_id
+        thread = threading.Thread(
+            target=_analyze_user_messages_sentiment,
+            args=(conversation_id,),
+            daemon=True
+        )
+        thread.start()
+
+
+def _analyze_user_messages_sentiment(conversation_id):
+    """
+    대화의 아직 감정 분석이 안 된 사용자 메시지들을 감정 분석하는 내부 함수
+    백그라운드 스레드에서 실행됨
+    """
+    from django.db import close_old_connections
+    from .utils import analyze_sentiment
+    
+    try:
+        # 스레드에서 데이터베이스 연결 초기화
+        close_old_connections()
+        
+        # 해당 대화의 사용자 메시지 중 아직 감정 분석이 안 된 메시지들 가져오기
+        user_messages = Message.objects.filter(
+            conversation_id=conversation_id,
+            role='user'
+        ).filter(
+            sentiment__isnull=True  # 아직 감정 분석이 안 된 메시지만
+        )
+        
+        for message in user_messages:
+            try:
+                # 메시지 내용 복호화
+                content = message.get_decrypted_content()
+                
+                # 감정 분석 수행
+                sentiment_result = analyze_sentiment(content)
+                
+                # SentimentAnalysis 객체 생성 또는 업데이트
+                SentimentAnalysis.objects.update_or_create(
+                    message=message,
+                    defaults={
+                        'sentiment_type': sentiment_result['sentiment_type'],
+                        'sentiment_score': sentiment_result['sentiment_score'],
+                        'keywords': sentiment_result['keywords']
+                    }
+                )
+            except Exception as e:
+                # 개별 메시지 분석 실패해도 계속 진행
+                print(f"메시지 {message.id} 감정 분석 실패: {e}")
+                continue
+                
+    except Exception as e:
+        print(f"대화 {conversation_id} 감정 분석 오류: {e}")
+    finally:
+        # 작업 완료 후 연결 정리
+        close_old_connections()
 
 
 # 챗 검색 기능.

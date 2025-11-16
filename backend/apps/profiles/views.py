@@ -172,11 +172,15 @@ def dashboard_api_conversation_frequency(request):
 def dashboard_api_hourly_pattern(request):
     """
     시간대별 대화 패턴 데이터를 반환하는 API (히트맵용)
+    메시지 생성 시간을 기준으로 계산 (대화 세션이 아닌 실제 메시지 활동 시간)
     """
     user = request.user
 
-    # 모든 대화의 생성 시간을 가져옴
-    conversations = Conversation.objects.filter(user=user).annotate(
+    # 사용자가 보낸 메시지의 생성 시간을 가져옴 (실제 대화 활동 시간)
+    messages = Message.objects.filter(
+        conversation__user=user,
+        role='user'  # 사용자 메시지만 (실제 대화 활동)
+    ).annotate(
         weekday=ExtractWeekDay('created_at'),  # 1=일요일, 2=월요일, ..., 7=토요일
         hour=ExtractHour('created_at')
     ).values('weekday', 'hour').annotate(
@@ -187,8 +191,8 @@ def dashboard_api_hourly_pattern(request):
     # weekday: 1(일) ~ 7(토) -> 0(월) ~ 6(일)로 변환
     heatmap_data = [[0 for _ in range(24)] for _ in range(7)]
 
-    for conv in conversations:
-        weekday = conv['weekday']
+    for msg in messages:
+        weekday = msg['weekday']
         # Django의 ExtractWeekDay: 1=일요일, 2=월요일, ..., 7=토요일
         # 배열 인덱스: 0=월요일, 1=화요일, ..., 6=일요일로 변환
         if weekday == 1:  # 일요일
@@ -196,8 +200,8 @@ def dashboard_api_hourly_pattern(request):
         else:  # 월요일~토요일
             day_index = weekday - 2
 
-        hour = conv['hour']
-        count = conv['count']
+        hour = msg['hour']
+        count = msg['count']
 
         heatmap_data[day_index][hour] = count
 

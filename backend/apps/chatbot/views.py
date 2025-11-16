@@ -227,36 +227,29 @@ class ConversationListCreateView(generics.ListCreateAPIView):
 
             total_sentiments = sentiment_stats['positive'] + sentiment_stats['negative'] + sentiment_stats['neutral']
 
-            # 퍼센테이지 계산
+            # 퍼센테이지 계산 (감정 분석 데이터가 있을 때만)
+            sentiment_percentages = None
             if total_sentiments > 0:
                 sentiment_percentages = {
                     'positive': round((sentiment_stats['positive'] / total_sentiments * 100), 1),
                     'negative': round((sentiment_stats['negative'] / total_sentiments * 100), 1),
                     'neutral': round((sentiment_stats['neutral'] / total_sentiments * 100), 1)
                 }
-            else:
-                # TODO: 추후 삭제 - 임시 하드코딩 (감정 분석 연동 전까지)
-                # 대화별로 다른 비율을 보여주기 위해 대화 ID 기반으로 생성
-                import random
-                random.seed(conv.id)  # 대화 ID를 시드로 사용하여 일관된 값 생성
-                negative = round(random.uniform(10, 40), 1)
-                neutral = round(random.uniform(20, 50), 1)
-                positive = round(100 - negative - neutral, 1)
-                sentiment_percentages = {
-                    'positive': positive,
-                    'negative': negative,
-                    'neutral': neutral
-                }
 
-            conversations.append({
+            conversation_data = {
                 'id': conv.id,
                 'title': conv.title or 'Untitled',
                 'created_at': conv.created_at,
                 'updated_at': conv.updated_at,
                 'message_count': conv.messages.count(),
                 'last_message_preview': last_message_preview,
-                'sentiment_percentages': sentiment_percentages
-            })
+            }
+            
+            # 감정 분석 데이터가 있을 때만 포함
+            if sentiment_percentages:
+                conversation_data['sentiment_percentages'] = sentiment_percentages
+            
+            conversations.append(conversation_data)
 
         return Response(conversations)
 
