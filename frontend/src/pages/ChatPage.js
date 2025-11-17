@@ -48,8 +48,6 @@ const RelatedImageCard = ({ image, index }) => {
   );
 };
 
-const CHATBOT_ICON_PATH = "/media/assets/chatbot_icon.png";
-
 function ChatPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
@@ -68,22 +66,10 @@ function ChatPage() {
   const location = useLocation();
   const [conversationState, setConversationState] = useState(null);
   const [requiresAnswer, setRequiresAnswer] = useState(false);
-  const chatbotIconUrl = buildAbsoluteMediaUrl(CHATBOT_ICON_PATH);
   const resetConversationFlow = () => {
     setConversationState(null);
     setRequiresAnswer(false);
   };
-
-  const renderAssistantAvatar = () =>
-    chatbotIconUrl ? (
-      <img
-        src={chatbotIconUrl}
-        alt="chatbot icon"
-        className="avatar-image assistant-avatar"
-      />
-    ) : (
-      <span className="avatar-placeholder">AI</span>
-    );
 
   useEffect(() => {
     loadChatInfo();
@@ -436,7 +422,7 @@ function ChatPage() {
                       </div>
                     )
                   ) : (
-                    renderAssistantAvatar()
+                    <span className="avatar-placeholder">AI</span>
                   )}
                 </div>
 
@@ -486,7 +472,7 @@ function ChatPage() {
           {isLoading && (
             <div className="message assistant">
               <div className="message-avatar">
-                {renderAssistantAvatar()}
+                <span className="avatar-placeholder">AI</span>
               </div>
               <div className="message-content-wrapper">
                 <div className="typing-indicator">
