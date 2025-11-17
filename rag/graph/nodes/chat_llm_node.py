@@ -74,6 +74,10 @@ def chat_llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
     verified = state.get("verified_chunks") or []
     sql_res = state.get("sql_results") or []
     node_type = (state.get("node_type") or "").strip().lower()
+    
+    # 검증된 청크에 연결된 이미지 정보 가져오기
+    verified_chunk_images = state.get("verified_chunk_images") or []
+    chunk_sources = state.get("chunk_sources") or []
 
     # 근거 텍스트 정리(정보형)
     evidence = verified + sql_res
@@ -139,4 +143,9 @@ def chat_llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     state["final_answer"] = answer
+    
+    # 이미지 정보를 state에 저장 (웹 인터페이스에서 사용하기 위해)
+    state["verified_chunk_images"] = verified_chunk_images
+    state["chunk_sources"] = chunk_sources
+    
     return state
