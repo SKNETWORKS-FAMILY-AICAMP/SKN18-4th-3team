@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Header from "../components/Header";
 import Sphere2D from "../components/Sphere2D";
-import { getChatInfo, getConversations } from "../api/chat";
+import { getChatInfo, getConversations, getConversationDetail } from "../api/chat";
+import { useToast } from "../contexts/ToastContext";
 import "./MainPage.css";
 
 function MainPage() {
@@ -14,6 +15,7 @@ function MainPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [displayedText, setDisplayedText] = useState("");
+  const { showToast } = useToast();
   const fullText = useMemo(() => {
     if (isAuthenticated && user?.username) {
       return `안녕하세요, ${user.username}님!\n오늘 마음이 어떠신가요?\n편하게 이야기를 시작해보세요.`;
@@ -48,6 +50,59 @@ function MainPage() {
     };
     fetchInfo();
   }, []);
+
+  // 백그라운드 요청 감지 (MainPage에서 폴링)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    let pollingInterval = null;
+
+    const checkPendingRequests = async () => {
+      try {
+        // localStorage에서 진행 중인 요청 확인
+        const pendingRequest = localStorage.getItem('pendingChatRequest');
+        if (!pendingRequest) return;
+
+        const { conversationId, messageCount } = JSON.parse(pendingRequest);
+
+        // 대화 세션 조회
+        const data = await getConversationDetail(conversationId);
+
+        // 메시지 수가 증가했으면 응답 완료
+        if (data.messages.length > messageCount) {
+          // 토스트 표시
+          showToast("답변이 준비되었습니다!", "success");
+
+          // localStorage에서 제거
+          localStorage.removeItem('pendingChatRequest');
+
+          // 대화 목록 갱신
+          const convs = await getConversations();
+          setConversations(convs);
+
+          // 폴링 중지
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+        }
+      } catch (err) {
+        console.error("백그라운드 요청 확인 실패:", err);
+      }
+    };
+
+    // 즉시 확인
+    checkPendingRequests();
+
+    // 2초마다 확인
+    pollingInterval = setInterval(checkPendingRequests, 2000);
+
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [isAuthenticated, showToast]);
 
   // fullText가 변경되면 타입라이터 효과 재시작
   useEffect(() => {

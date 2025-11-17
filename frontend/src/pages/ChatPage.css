@@ -167,6 +167,7 @@
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   word-break: break-word;
 }
@@ -855,15 +856,16 @@
   padding: 16px 20px 16px 24px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999; /* z-index를 높여서 다른 요소 위에 표시되도록 */
+  z-index: 99999; /* z-index를 더 높여서 다른 요소 위에 표시되도록 */
   font-size: 14px;
   font-weight: 500;
-  animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s;
-  animation-fill-mode: both;
+  animation: toastSlideIn 0.3s ease-out;
   max-width: 300px;
   word-wrap: break-word;
   border-left: 4px solid;
   pointer-events: auto; /* 클릭 이벤트가 동작하도록 */
+  opacity: 1; /* 명시적으로 opacity 설정 */
+  transform: translateX(0); /* 초기 상태 명시 */
 }
 
 .toast-success {

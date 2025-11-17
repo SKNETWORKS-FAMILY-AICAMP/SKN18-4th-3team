@@ -10,6 +10,7 @@ import {
   deleteConversation,
 } from "../api/chat";
 import { buildAbsoluteMediaUrl } from "../utils/media";
+import { useToast } from "../contexts/ToastContext";
 import Header from "../components/Header";
 import SphereAvatar from "../components/SphereAvatar";
 import "./ChatPage.css";
@@ -74,44 +75,15 @@ function ChatPage() {
   const [conversationState, setConversationState] = useState(null);
   const [requiresAnswer, setRequiresAnswer] = useState(false);
   const pendingRequestRef = useRef(null); // 백그라운드 요청 추적
-  const [toast, setToast] = useState(null); // 토스트 알림 상태
   const [streamingMessages, setStreamingMessages] = useState({}); // 스트리밍 중인 메시지들 (index -> displayedText)
   const streamingRefs = useRef({}); // 스트리밍 타이머 참조 저장
   const previousMessagesLengthRef = useRef(0); // 이전 메시지 개수 추적
-  const toastTimeoutRef = useRef(null); // 토스트 타이머 참조
   const wasOnChatPageRef = useRef(true); // 메시지 전송 시 ChatPage에 있었는지 추적
+  const { showToast } = useToast(); // 전역 토스트 사용
   const resetConversationFlow = () => {
     setConversationState(null);
     setRequiresAnswer(false);
   };
-
-  // 토스트 알림 표시 함수 (간단하고 확실한 방법)
-  const showToast = (message, type = "success") => {
-    // 이전 타이머 정리
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-      toastTimeoutRef.current = null;
-    }
-
-    // 토스트 표시
-    setToast({ message, type });
-
-    // 3초 후 자동 숨김 (함수 내에서 직접 처리 - 더 확실함)
-    toastTimeoutRef.current = setTimeout(() => {
-      setToast(null);
-      toastTimeoutRef.current = null;
-    }, 3000);
-  };
-
-  // 컴포넌트 언마운트 시 타이머 정리
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-        toastTimeoutRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     loadChatInfo();
@@ -131,10 +103,6 @@ function ChatPage() {
       if (document.hidden) {
         // 페이지가 숨겨졌을 때 (다른 탭으로 이동하거나 페이지를 떠남)
         wasOnChatPageRef.current = false;
-        console.log("[ChatPage] 페이지 숨김 - ChatPage를 떠남");
-      } else {
-        // 페이지가 다시 보일 때 (탭으로 돌아옴)
-        console.log("[ChatPage] 페이지 표시 - ChatPage로 돌아옴");
       }
     };
 
@@ -150,7 +118,6 @@ function ChatPage() {
     // ChatPage가 언마운트될 때 (다른 페이지로 이동)
     return () => {
       wasOnChatPageRef.current = false;
-      console.log("[ChatPage] 컴포넌트 언마운트 - 다른 페이지로 이동");
     };
   }, []);
 
@@ -290,11 +257,6 @@ function ChatPage() {
 
           // 메시지 수가 증가했으면 업데이트 (백그라운드에서 응답이 완료된 경우)
           if (data.messages.length > messages.length) {
-            console.log("[ChatPage] 백그라운드 응답 완료 감지:", {
-              이전메시지수: messages.length,
-              새메시지수: data.messages.length,
-              ChatPage에있었는지: wasOnChatPageRef.current,
-            });
             setMessages(data.messages);
             setSelectedConversation(data);
             previousMessagesLengthRef.current = data.messages.length; // 백그라운드 응답은 스트리밍하지 않음
@@ -559,13 +521,6 @@ function ChatPage() {
     setIsStopped(false); // 중지 상태 초기화
     setInputMessage(""); // 입력 메시지 초기화
 
-    // 토스트 타이머도 정리
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-      toastTimeoutRef.current = null;
-    }
-    setToast(null); // 토스트도 초기화
-
     // 로그인 사용자인 경우 대화 목록 갱신
     if (isAuthenticated) {
       try {
@@ -633,6 +588,15 @@ function ChatPage() {
               conversationId = tempConv.id;
               setSelectedConversation(tempConv);
 
+              // localStorage에 백그라운드 요청 저장 (메시지 전송 전 카운트)
+              localStorage.setItem(
+                "pendingChatRequest",
+                JSON.stringify({
+                  conversationId: tempConv.id,
+                  messageCount: messages.length + 1, // user 메시지 추가된 상태
+                })
+              );
+
               const data = await sendMessage(
                 tempConv.id,
                 messageContent,
@@ -647,23 +611,30 @@ function ChatPage() {
                 conversationId = actualConv.id;
                 setSelectedConversation(actualConv);
                 if (data?.assistant_message) {
-                  console.log("[ChatPage] 새 대화 - 응답 받음", {
-                    시작시ChatPage: startedOnChatPage,
-                    현재ChatPage: wasOnChatPageRef.current,
-                  });
                   setMessages((prev) => [...prev, data.assistant_message]);
                   // 응답 완료 시 사용자가 ChatPage를 떠났으면 토스트 표시
                   // startedOnChatPage가 true이고 현재 wasOnChatPageRef.current가 false이면 토스트 표시
                   if (startedOnChatPage && !wasOnChatPageRef.current) {
-                    console.log("[ChatPage] 토스트 표시: 사용자가 페이지를 떠났다가 돌아옴");
                     showToast("답변이 준비되었습니다!", "success");
                   }
+                  // localStorage에서 제거 (응답 완료)
+                  localStorage.removeItem("pendingChatRequest");
                 }
                 setConversationState(data?.conversation_state || null);
                 setRequiresAnswer(!!data?.requires_answer);
               }
             } else {
               conversationId = selectedConversation.id;
+
+              // localStorage에 백그라운드 요청 저장 (메시지 전송 전 카운트)
+              localStorage.setItem(
+                "pendingChatRequest",
+                JSON.stringify({
+                  conversationId: selectedConversation.id,
+                  messageCount: messages.length + 1, // user 메시지 추가된 상태
+                })
+              );
+
               const data = await sendMessage(
                 selectedConversation.id,
                 messageContent,
@@ -672,17 +643,14 @@ function ChatPage() {
               );
               if (!isStopped) {
                 if (data?.assistant_message) {
-                  console.log("[ChatPage] 기존 대화 - 응답 받음", {
-                    시작시ChatPage: startedOnChatPage,
-                    현재ChatPage: wasOnChatPageRef.current,
-                  });
                   setMessages((prev) => [...prev, data.assistant_message]);
                   // 응답 완료 시 사용자가 ChatPage를 떠났으면 토스트 표시
                   // startedOnChatPage가 true이고 현재 wasOnChatPageRef.current가 false이면 토스트 표시
                   if (startedOnChatPage && !wasOnChatPageRef.current) {
-                    console.log("[ChatPage] 토스트 표시: 사용자가 페이지를 떠났다가 돌아옴");
                     showToast("답변이 준비되었습니다!", "success");
                   }
+                  // localStorage에서 제거 (응답 완료)
+                  localStorage.removeItem("pendingChatRequest");
                 }
                 setConversationState(data?.conversation_state || null);
                 setRequiresAnswer(!!data?.requires_answer);
@@ -692,6 +660,8 @@ function ChatPage() {
           } catch (err) {
             console.error("백그라운드 메시지 처리 실패:", err);
             // 에러가 발생해도 사용자 메시지는 이미 표시되었으므로 계속 진행
+            // localStorage에서 제거 (에러 발생 시)
+            localStorage.removeItem("pendingChatRequest");
           } finally {
             setIsLoading(false);
             pendingRequestRef.current = null;
@@ -1001,13 +971,6 @@ function ChatPage() {
           </form>
         </div>
       </main>
-
-      {/* 토스트 알림 */}
-      {toast && (
-        <div className={`toast-notification toast-${toast.type}`}>
-          {toast.message}
-        </div>
-      )}
     </div>
   );
 }
