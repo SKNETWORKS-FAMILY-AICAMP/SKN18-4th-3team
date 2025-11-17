@@ -1,0 +1,49 @@
+.sphere2d-container {
+  width: 170px;
+  height: 170px;
+  position: relative;
+  z-index: 0;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 768px) {
+  .sphere2d-container {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+.sphere2d {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+}
+
+.sphere2d-canvas-wrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 4;
+}
+
+.sphere2d-canvas-wrapper canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sphere2d-glass {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(3.9px);
+  -webkit-backdrop-filter: blur(3.9px);
+  box-shadow: rgba(31, 38, 135, 0.22) 0px 1.3px 5.3px;
+  z-index: 5;
+}

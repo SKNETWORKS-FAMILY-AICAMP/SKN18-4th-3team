@@ -48,18 +48,17 @@ def state_check_node(state):
             "slot_7": False,
         },
     )
-    # 예: {"slot_1": "우울하고 불안해요", } 형태로 저장
+    # {"slot": "user_answer"}의 dict 형태로 저장
     slot_data = state.get("slot_data", {})
 
-    # 초기 질문이거나 answer_node를 거쳐온 경우에만 정보 추출
-    # (question_node를 거치지 않은 경우는 초기 질문)
-    if not current_slot or state.get("user_answer"):
+    # 초기 질문에서만 정보 추출 (user_answer가 있으면 answer_node에서 이미 처리됨)
+    if not current_slot and not state.get("user_answer"):
         # LLM을 사용하여 사용자 입력에서 slot 정보 추출
         extracted_info = extract_slot_info(user_input, slot_status)
 
         for slot_num, info in extracted_info.items():
             if info:
-                slot_data[slot_num] = info
+                slot_data[slot_num] = user_input # 답변 원본 그대로 사용
                 slot_status[slot_num] = True
 
     # 다음 미충족 slot 찾기(slot_1부터 확인)

@@ -43,8 +43,8 @@ except Exception:
 # 점수 범위 및 임계값
 MAX_RELEVANCE = 0.3
 MAX_HELPFULNESS = 0.3
-# 임계값: 나중에 실험하면서 조정 (지금은 낮게 두고 검증용)
-THRESHOLD = 0.1
+# 임계값: 나중에 실험하면서 조정
+THRESHOLD = 0.4
 
 def _build_chunk_preview(
     chunks: List[Dict[str, Any]],
