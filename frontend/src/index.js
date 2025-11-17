@@ -1,10 +1,19 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./styles/common.css";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+import { forceReloadFavicon } from "./utils/favicon";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// 페이지 로드 시 파비콘 강제 재로드
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", forceReloadFavicon);
+} else {
+  forceReloadFavicon();
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <App />
