@@ -79,56 +79,39 @@ function ChatPage() {
   const streamingRefs = useRef({}); // 스트리밍 타이머 참조 저장
   const previousMessagesLengthRef = useRef(0); // 이전 메시지 개수 추적
   const toastTimeoutRef = useRef(null); // 토스트 타이머 참조
+  const wasOnChatPageRef = useRef(true); // 메시지 전송 시 ChatPage에 있었는지 추적
   const resetConversationFlow = () => {
     setConversationState(null);
     setRequiresAnswer(false);
   };
 
-  // 토스트 알림 표시 함수
+  // 토스트 알림 표시 함수 (간단하고 확실한 방법)
   const showToast = (message, type = "success") => {
-    console.log("[Toast] 토스트 알림 표시 시작:", message, type);
-
-    // 이전 타이머가 있으면 정리
+    // 이전 타이머 정리
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
       toastTimeoutRef.current = null;
     }
 
-    const toastData = { message, type };
-    console.log("[Toast] setToast 호출 전 데이터:", toastData);
+    // 토스트 표시
+    setToast({ message, type });
 
-    // 상태 업데이트를 즉시 실행
-    setToast(toastData);
-    console.log("[Toast] setToast 호출 완료");
+    // 3초 후 자동 숨김 (함수 내에서 직접 처리 - 더 확실함)
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimeoutRef.current = null;
+    }, 3000);
   };
 
-  // 토스트 상태 변화 추적 및 자동 숨김 처리
+  // 컴포넌트 언마운트 시 타이머 정리
   useEffect(() => {
-    console.log("[Toast useEffect] toast 상태 변경됨:", toast);
-
-    if (toast) {
-      // 토스트가 표시되면 3초 후 자동으로 숨김
-      // 이전 타이머가 있으면 정리
+    return () => {
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
-      }
-
-      toastTimeoutRef.current = setTimeout(() => {
-        console.log("[Toast useEffect] 토스트 알림 숨김 시작");
-        setToast(null);
         toastTimeoutRef.current = null;
-        console.log("[Toast useEffect] 토스트 알림 숨김 완료");
-      }, 3000);
-
-      // cleanup: 컴포넌트 언마운트 시 타이머 정리
-      return () => {
-        if (toastTimeoutRef.current) {
-          clearTimeout(toastTimeoutRef.current);
-          toastTimeoutRef.current = null;
-        }
-      };
-    }
-  }, [toast]);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     loadChatInfo();
@@ -142,9 +125,45 @@ function ChatPage() {
     }
   }, [location]);
 
+  // 페이지 가시성 변경 감지 (탭 전환 또는 페이지 이동)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // 페이지가 숨겨졌을 때 (다른 탭으로 이동하거나 페이지를 떠남)
+        wasOnChatPageRef.current = false;
+        console.log("[ChatPage] 페이지 숨김 - ChatPage를 떠남");
+      } else {
+        // 페이지가 다시 보일 때 (탭으로 돌아옴)
+        console.log("[ChatPage] 페이지 표시 - ChatPage로 돌아옴");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  // Route 변경 감지 (다른 페이지로 이동)
+  useEffect(() => {
+    // ChatPage가 언마운트될 때 (다른 페이지로 이동)
+    return () => {
+      wasOnChatPageRef.current = false;
+      console.log("[ChatPage] 컴포넌트 언마운트 - 다른 페이지로 이동");
+    };
+  }, []);
+
   // MainPage에서 대화 세션을 선택해서 넘어온 경우 자동으로 대화 로드
   useEffect(() => {
     const conversationId = location.state?.conversationId;
+    const createNew = location.state?.createNew;
+
+    // createNew가 true이면 대화를 로드하지 않음
+    if (createNew) {
+      return;
+    }
+
     if (
       conversationId &&
       isAuthenticated &&
@@ -155,6 +174,7 @@ function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     location.state?.conversationId,
+    location.state?.createNew,
     isAuthenticated,
     selectedConversation?.id,
   ]);
@@ -254,6 +274,15 @@ function ChatPage() {
     let pollingInterval = null;
 
     const checkMessages = async () => {
+      // selectedConversation이 null이면 폴링 중지
+      if (!selectedConversation?.id) {
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+        return;
+      }
+
       if (isAuthenticated && selectedConversation?.id) {
         try {
           const data = await getConversationDetail(selectedConversation.id);
@@ -264,14 +293,23 @@ function ChatPage() {
             console.log("[ChatPage] 백그라운드 응답 완료 감지:", {
               이전메시지수: messages.length,
               새메시지수: data.messages.length,
+              ChatPage에있었는지: wasOnChatPageRef.current,
             });
             setMessages(data.messages);
             setSelectedConversation(data);
             previousMessagesLengthRef.current = data.messages.length; // 백그라운드 응답은 스트리밍하지 않음
             setIsLoading(false); // 응답 완료 시 로딩 상태 해제
 
-            // 백그라운드에서 응답이 완료되었을 때 항상 토스트 알림 표시
-            showToast("답변이 준비되었습니다!", "success");
+            // 사이드바 대화 목록 갱신 (응답 완료된 대화가 사이드바에 표시되도록)
+            loadConversations();
+
+            // 응답 완료 시 사용자가 ChatPage에 없었으면 토스트 표시
+            if (!wasOnChatPageRef.current) {
+              showToast("답변이 준비되었습니다!", "success");
+            }
+
+            // 토스트 표시 후 다시 ChatPage에 있는 것으로 설정
+            wasOnChatPageRef.current = true;
 
             // 대화 상태는 백엔드에 저장되지 않으므로 복원 불가
             // 사용자가 다시 대화를 시작하면 상태가 초기화됨
@@ -318,6 +356,15 @@ function ChatPage() {
     };
 
     const handleFocus = async () => {
+      // selectedConversation이 없으면 폴링 시작하지 않음
+      if (!selectedConversation?.id) {
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+        return;
+      }
+
       // 백그라운드 요청이 진행 중이면 로딩 상태 표시
       if (pendingRequestRef.current !== null) {
         setIsLoading(true);
@@ -326,8 +373,8 @@ function ChatPage() {
       // 즉시 확인
       await checkMessages();
 
-      // 백그라운드 요청이 진행 중이면 주기적으로 확인 (2초마다)
-      if (pendingRequestRef.current !== null) {
+      // 백그라운드 요청이 진행 중이고 selectedConversation이 있으면 주기적으로 확인 (2초마다)
+      if (pendingRequestRef.current !== null && selectedConversation?.id) {
         if (pollingInterval) {
           clearInterval(pollingInterval);
         }
@@ -475,14 +522,28 @@ function ChatPage() {
     }
   };
 
-  const handleNewConversation = (e) => {
+  const handleNewConversation = async (e) => {
     // 기본 동작 방지 (새로고침 방지)
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
+    // 백그라운드 요청 취소
+    if (pendingRequestRef.current) {
+      // Promise가 취소 가능한 경우 취소 처리
+      pendingRequestRef.current = null;
+    }
+
+    // location.state 초기화 (이전 대화 선택 상태 제거)
+    // navigate를 사용하여 location.state를 명확하게 초기화
+    navigate("/chat", {
+      replace: true,
+      state: { createNew: true, openSidebar: isSidebarOpen },
+    });
+
     // 대화 세션은 실제 메시지 전송 시 생성되므로 여기서는 초기화만
+    // 상태 업데이트를 배치로 처리하여 즉시 반영되도록 함
     setSelectedConversation(null);
     setMessages([]);
     // 스트리밍 상태 초기화
@@ -497,6 +558,22 @@ function ChatPage() {
     setIsLoading(false); // 로딩 상태 초기화
     setIsStopped(false); // 중지 상태 초기화
     setInputMessage(""); // 입력 메시지 초기화
+
+    // 토스트 타이머도 정리
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+    setToast(null); // 토스트도 초기화
+
+    // 로그인 사용자인 경우 대화 목록 갱신
+    if (isAuthenticated) {
+      try {
+        await loadConversations();
+      } catch (err) {
+        console.error("대화 목록 갱신 실패:", err);
+      }
+    }
   };
 
   const handleDeleteConversation = async (conversationId) => {
@@ -530,6 +607,10 @@ function ChatPage() {
     const statePayload = conversationState;
     setInputMessage("");
 
+    // 메시지 전송 시 현재 위치 기록 (응답 완료 시 비교하기 위해)
+    const wasOnChatPageAtStart = true; // 메시지 전송 시점에는 항상 ChatPage에 있음
+    wasOnChatPageRef.current = true;
+
     try {
       if (isAuthenticated) {
         // 로그인 사용자
@@ -543,6 +624,7 @@ function ChatPage() {
         // 백그라운드에서 응답 처리 (페이지를 벗어나도 계속 진행)
         const processResponse = async () => {
           let conversationId = null;
+          const startedOnChatPage = wasOnChatPageAtStart; // 클로저로 시작 위치 캡처
           try {
             if (!selectedConversation) {
               // 대화 세션이 없으면 먼저 생성하지 않고, 메시지 전송 시 백엔드에서 자동 생성되도록
@@ -565,10 +647,17 @@ function ChatPage() {
                 conversationId = actualConv.id;
                 setSelectedConversation(actualConv);
                 if (data?.assistant_message) {
-                  console.log("[ChatPage] 새 대화 - 응답 받음");
+                  console.log("[ChatPage] 새 대화 - 응답 받음", {
+                    시작시ChatPage: startedOnChatPage,
+                    현재ChatPage: wasOnChatPageRef.current,
+                  });
                   setMessages((prev) => [...prev, data.assistant_message]);
-                  // 백그라운드 응답 완료 토스트 알림
-                  showToast("답변이 준비되었습니다!", "success");
+                  // 응답 완료 시 사용자가 ChatPage를 떠났으면 토스트 표시
+                  // startedOnChatPage가 true이고 현재 wasOnChatPageRef.current가 false이면 토스트 표시
+                  if (startedOnChatPage && !wasOnChatPageRef.current) {
+                    console.log("[ChatPage] 토스트 표시: 사용자가 페이지를 떠났다가 돌아옴");
+                    showToast("답변이 준비되었습니다!", "success");
+                  }
                 }
                 setConversationState(data?.conversation_state || null);
                 setRequiresAnswer(!!data?.requires_answer);
@@ -583,10 +672,17 @@ function ChatPage() {
               );
               if (!isStopped) {
                 if (data?.assistant_message) {
-                  console.log("[ChatPage] 기존 대화 - 응답 받음");
+                  console.log("[ChatPage] 기존 대화 - 응답 받음", {
+                    시작시ChatPage: startedOnChatPage,
+                    현재ChatPage: wasOnChatPageRef.current,
+                  });
                   setMessages((prev) => [...prev, data.assistant_message]);
-                  // 백그라운드 응답 완료 토스트 알림
-                  showToast("답변이 준비되었습니다!", "success");
+                  // 응답 완료 시 사용자가 ChatPage를 떠났으면 토스트 표시
+                  // startedOnChatPage가 true이고 현재 wasOnChatPageRef.current가 false이면 토스트 표시
+                  if (startedOnChatPage && !wasOnChatPageRef.current) {
+                    console.log("[ChatPage] 토스트 표시: 사용자가 페이지를 떠났다가 돌아옴");
+                    showToast("답변이 준비되었습니다!", "success");
+                  }
                 }
                 setConversationState(data?.conversation_state || null);
                 setRequiresAnswer(!!data?.requires_answer);
@@ -662,7 +758,11 @@ function ChatPage() {
       {/* Sidebar - 헤더 아래 고정 */}
       {isSidebarOpen && (
         <aside className="chat-sidebar">
-          <button onClick={handleNewConversation} className="sidebar-new">
+          <button
+            type="button"
+            onClick={handleNewConversation}
+            className="sidebar-new"
+          >
             New Counseling
             <span className="material-symbols-outlined paper-plane-icon">
               send
@@ -908,27 +1008,6 @@ function ChatPage() {
           {toast.message}
         </div>
       )}
-      {/* 디버깅: 토스트 상태 확인 */}
-      {console.log("[ChatPage Render] toast 상태:", toast)}
-
-      {/* 디버깅: 토스트 테스트 버튼 */}
-      <button
-        onClick={() => showToast("답변이 준비되었습니다!", "success")}
-        style={{
-          position: "fixed",
-          bottom: "100px",
-          right: "30px",
-          padding: "10px 20px",
-          background: "#4caf50",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-          zIndex: 9999,
-        }}
-      >
-        토스트 테스트
-      </button>
     </div>
   );
 }

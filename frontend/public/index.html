@@ -2,9 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="shortcut icon" href="/favicon.png" />
+    <!-- 파비콘 캐시 무효화를 위한 버전 쿼리 파라미터 추가 (v=3으로 증가) -->
+    <!-- 표준 favicon.ico 경로도 추가 (브라우저가 기본으로 찾는 파일) -->
+    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.png?v=3" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      href="%PUBLIC_URL%/favicon-128x128.png?v=3"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="%PUBLIC_URL%/favicon.png?v=3"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="%PUBLIC_URL%/favicon-16x16.png?v=3"
+    />
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/favicon.svg?v=3" />
+    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.png?v=3" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon-128x128.png?v=3" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta
@@ -15,7 +36,7 @@
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json?v=3" />
     <!-- Google Material Icons -->
     <link
       rel="stylesheet"

@@ -490,7 +490,8 @@
 }
 
 .message.assistant .message-avatar {
-  background: #000;
+  background: transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .message.assistant .message-avatar .avatar-placeholder {
@@ -854,7 +855,7 @@
   padding: 16px 20px 16px 24px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 9999; /* z-index를 높여서 다른 요소 위에 표시되도록 */
   font-size: 14px;
   font-weight: 500;
   animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s;
@@ -862,6 +863,7 @@
   max-width: 300px;
   word-wrap: break-word;
   border-left: 4px solid;
+  pointer-events: auto; /* 클릭 이벤트가 동작하도록 */
 }
 
 .toast-success {
