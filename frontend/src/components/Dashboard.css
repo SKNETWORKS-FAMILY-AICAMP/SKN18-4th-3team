@@ -1,0 +1,196 @@
+.dashboard {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* ProfilePage에서 사용될 때 여백 조정 */
+.profile-page .dashboard {
+  padding-top: 0;
+}
+
+.dashboard-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: #6dd5fa;
+}
+
+.dashboard-loading,
+.dashboard-error {
+  text-align: center;
+  padding: 60px 40px;
+  font-size: 18px;
+  color: #666;
+}
+
+.dashboard-error {
+  color: #ff5b5b;
+}
+
+/* KPI 섹션 */
+.kpi-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.kpi-card {
+  background: #6dd5fa;
+  padding: 32px;
+  border-radius: 20px;
+  color: white;
+  box-shadow: 0 8px 24px rgba(109, 213, 250, 0.25);
+  transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(109, 213, 250, 0.35);
+}
+
+.kpi-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  opacity: 0.95;
+  letter-spacing: -0.02em;
+}
+
+.kpi-value {
+  font-size: 42px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+/* 차트 그리드 */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+  gap: 24px;
+}
+
+.chart-card {
+  background: rgba(255, 255, 255, 0.92);
+  padding: 28px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(200, 200, 220, 0.2);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(196, 181, 253, 0.2);
+}
+
+.chart-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.chart-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+/* 파이 차트 */
+.pie-chart-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 32px;
+  padding: 20px;
+}
+
+.pie-chart-svg {
+  width: 200px;
+  height: 200px;
+}
+
+.pie-chart-svg circle {
+  transition: stroke-dasharray 0.3s ease;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* 히트맵 */
+.heatmap-container {
+  overflow-x: auto;
+  padding: 12px;
+}
+
+/* 키워드 클라우드 */
+.keywords-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 28px;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgba(109, 213, 250, 0.05) 0%,
+    rgba(252, 165, 241, 0.05) 100%
+  );
+  border-radius: 12px;
+}
+
+.keyword-item {
+  display: inline-block;
+  font-weight: 700;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+  cursor: default;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.keyword-item:hover {
+  transform: scale(1.15) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card.full-width {
+    grid-column: 1;
+  }
+
+  .pie-chart-container {
+    flex-direction: column;
+  }
+}

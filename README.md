@@ -1,148 +1,362 @@
-# SKN18-4th-3team
+# MindCare ∞ | 정신건강 AI 상담 파트너
 
-## 목차
-
-- [환경 설정](#환경-설정)
-- [RAG ETL 파이프라인](#rag-etl-파이프라인)
-  - [1. Extraction (추출)](#1-extraction-추출)
-  - [2. Transform & Chunking (변환 및 청킹)](#2-transform--chunking-변환-및-청킹)
-  - [3. Loader (적재)](#3-loader-적재)
+> 정신건강 정보 검색과 감정 코칭을 하나의 대화 경험으로 엮은 LangGraph 기반 하이브리드 챗봇 서비스
 
 ---
 
-## 환경 설정
+## 📑 목차
 
-### 1. 가상환경 설치 및 의존성 설치
+- [서비스 소개](#-서비스-소개)
+- [핵심 기능](#-핵심-기능)
+- [시스템 아키텍처](#-시스템-아키텍처)
+- [상담형 대화 처리](#-상담형-대화-처리)
+- [로컬 실행](#-로컬-실행)
+- [기술 스택](#-기술-스택)
 
+---
+
+## 🎯 서비스 소개
+
+### 목표
+국가정신건강정보포털 데이터 기반 **신뢰할 수 있는 질환 정보** + **사용자 감정 맥락** 동시 케어
+
+### 타깃
+- 2030 직장인 · 취준생
+- 심리 상담이 부담스러운 초입 사용자
+
+### 해결하는 문제
+
+| 문제 | 기존 한계 | MindCare 해법 |
+|------|----------|--------------|
+| 🚧 감정 표현 어려움 | 맥락 기억 불가 | **LangGraph 슬롯 메모리** (7개 질문) |
+| ⚠️ 정보 신뢰도 | 출처 불분명 | **국가정신정보포털 → pgvector RAG** |
+| 🔒 내용 노출 우려 | Plain text 저장 | **Fernet 암호화 + 게스트 모드** |
+
+---
+
+## ✨ 핵심 기능
+
+### 1️⃣ 듀얼 플로우 AI 상담
+
+- **정보형**: "우울증이란?" → Vector DB + SQL 이미지 검색
+- **상담형**: "요즘 우울해요" → 7개 질문으로 감정 슬롯 수집
+
+### 2️⃣ 상담형 대화 (7개 슬롯)
+
+1. 😔 **감정 상태**: 우울함, 불안함, 무기력함
+2. 📅 **상황/시기**: 언제부터, 어떤 계기
+3. 😴 **신체 변화**: 수면, 식사, 피로감
+4. 💭 **사고 패턴**: 자책감, 부정적 사고
+5. 🚶 **행동 패턴**: 사회적 회피, 활동 감소
+6. 👥 **대인관계**: 가족, 친구, 지지 체계
+7. 🏥 **상담 의향**: 전문 상담/치료 의향
+
+### 3️⃣ 보안 & 인사이트
+
+- 🔐 **Fernet 암호화**: 모든 대화 암호화 저장
+- 📊 **대시보드**: 감정 분포, 시간대 히트맵, 키워드 클라우드
+- 👤 **게스트 모드**: 로그인 없이 익명 상담
+
+---
+
+## 🏗️ 시스템 아키텍처
+
+```
+사용자
+  ↓
+React Frontend (포트 3000)
+  ↓ REST API
+Django Backend (포트 8000)
+  ↓
+LangGraph (AI 대화 엔진)
+  ↓
+pgvector DB + OpenAI GPT-5
+```
+
+---
+
+## 🖼️ 서비스 스크린샷
+
+### LangSmith 트레이스 캡처
+![LangSmith Trace Flow](docs/images/langsmith-trace.png)
+
+- LangGraph 노드들이 순차적으로 실행되는 화면을 전체가 보이도록 캡처
+- 정보형 / 상담형
+
+### 챗봇 상담 화면
+![Chatbot UI](docs/images/chatbot-session.png)
+
+- React UI에서 사용자 발화, 봇 질문 등 대화 전체가 보이도록 캡처
+- 정보형 / 상담형
+
+### 대시보드
+![Dashboard](docs/images/dashboard-overview.png)
+
+- 마이페이지의 대시보드 캡처
+
+---
+
+## 🔄 상담형 대화 처리
+
+> 백엔드는 상태 저장 안 함(stateless), 프론트가 `conversation_state` 메모리 보관
+
+### 상태 관리
+
+| 위치 | 저장 내용 | 목적 |
+|------|----------|------|
+| **DB** | 메시지 (암호화) | 대화 기록 |
+| **프론트 메모리** | conversation_state | 대화 상태 유지 |
+
+**conversation_state 구조**:
+```javascript
+{
+  slot_data: {
+    slot_1: "우울하고 무기력해요",  // 감정
+    slot_2: "2주 전부터",           // 시기
+    slot_3: null,                   // 미수집
+    // ... slot_7까지
+  },
+  slot_status: {
+    slot_1: true,   // 완료
+    slot_2: true,   // 완료
+    slot_3: false,  // 미완료
+  },
+  current_slot: "slot_3",
+  initial_question: "요즘 우울해요",
+  question_type: "counseling"
+}
+```
+
+### 대화 흐름
+
+#### Turn 1: 첫 질문
+```
+사용자: "요즘 우울해요"
+  ↓
+백엔드: 그래프 실행 (classify → state_check → question)
+  ↓
+응답: {
+  bot_question: "언제부터 우울하셨나요?",
+  conversation_state: { slot_1 완료 },
+  requires_answer: true
+}
+  ↓
+프론트: conversation_state 메모리 저장 ✅
+```
+
+#### Turn 2: 사용자 답변
+```
+사용자: "2주 전부터요"
+  ↓
+프론트: 저장된 conversation_state + 답변 전송
+  ↓
+백엔드: 상태 복원 → 그래프 실행
+  ↓
+응답: {
+  bot_question: "수면은 어떠신가요?",
+  conversation_state: { slot_1,2 완료 },
+  requires_answer: true
+}
+  ↓
+프론트: 업데이트된 상태 저장 ✅
+```
+
+#### Turn 3~7: 반복
+7개 슬롯 완료까지 반복
+
+#### 최종: 모든 슬롯 완료
+```
+백엔드: slot_memory → extract → search → chat_llm
+  ↓
+응답: {
+  final_answer: "증상 분석 결과...",
+  requires_answer: false
+}
+  ↓
+프론트: conversation_state = null (종료) ✅
+```
+
+### 핵심 포인트
+
+- ✅ 백엔드는 상태 저장 안 함 (stateless)
+- ✅ 프론트가 `conversation_state` 메모리 보관
+- ✅ 매 요청마다 프론트가 상태 전송
+- ✅ `requires_answer` 플래그로 답변 필요 여부 판단
+
+---
+
+## 🚀 로컬 실행 (처음부터 끝까지)
+
+### 사전 준비
+- Python 3.12 이상
+- Node.js 18 이상
+- Docker Desktop (PostgreSQL용)
+- uv 패키지 매니저 ([설치 가이드](https://docs.astral.sh/uv/getting-started/installation/))
+
+---
+
+### 1️⃣ 프로젝트 클론
+```bash
+git clone <repository-url>
+cd SKN18-4th-3team
+```
+
+### 2️⃣ 환경 변수 설정
+```bash
+# .env 파일 생성
+cp .env.sample .env
+cp frontend/.env.sample frontend/.env
+```
+
+**.env 파일 편집** (필수!):
+```bash
+# OpenAI API 키 (필수)
+OPENAI_API_KEY=your-openai-api-key-here
+
+# 암호화 키 생성 (Python으로 생성)
+# python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+ENCRYPTION_KEY=your-generated-encryption-key
+
+# 데이터베이스 (기본값 사용 가능)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mindcare
+```
+
+### 3️⃣ Python 가상환경 & 패키지 설치
 ```bash
 # 가상환경 생성
-uv venv .venv python3.12
+uv venv .venv
 
 # 가상환경 활성화
+# Windows:
+.venv\Scripts\activate
+# Mac/Linux:
 source .venv/bin/activate
 
-# 의존성 설치
-uv pip install -r requirements.txt
-
-# Playwright 브라우저 설치
-playwright install chromium
+# 패키지 설치
+uv pip install -r docker/requirements.txt
 ```
 
-### 2. 환경 변수 설정
-
+### 4️⃣ PostgreSQL 실행 (Docker)
 ```bash
-# 환경 변수 파일 복사
-cp .env.sample .env
-```
-
-`.env` 파일에서 다음 항목을 설정하세요:
-
-- **API 키**: OpenAI API 키 설정
-- **PostgreSQL 설정**: 데이터베이스 연결 정보 설정
-
-#### PostgreSQL 포트 확인
-
-```bash
-# 포트 5432 사용 여부 확인
-lsof -i :5432
-```
-
-- 포트 5432가 사용 중이 아닌 경우: `PG_PORT=5432` 사용
-- 포트 5432가 사용 중인 경우: `PG_PORT=5433` 사용
-
-### 3. 데이터베이스 실행
-
-```bash
-# Docker Compose로 PostgreSQL 실행
+# Docker Compose로 PostgreSQL 시작
 docker-compose up -d
+
+# 실행 확인
+docker ps
 ```
 
-### 4. 데이터베이스 연결 확인
+### 5️⃣ 데이터베이스 마이그레이션 ⭐
+```bash
+# 마이그레이션 파일 생성
+python backend/manage.py makemigrations
 
-DBeaver 또는 다른 데이터베이스 클라이언트에서 연결 설정을 확인하세요.
+# 마이그레이션 적용 (DB 테이블 생성)
+python backend/manage.py migrate
+
+# 슈퍼유저 생성 (Admin 접속용)
+python backend/manage.py createsuperuser
+# Username, Email, Password 입력
+```
+
+### 6️⃣ 프론트엔드 패키지 설치
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### 7️⃣ 서버 실행
+
+**터미널 1 - 백엔드**:
+```bash
+# 가상환경 활성화 상태에서
+python backend/manage.py runserver 0.0.0.0:8000
+```
+
+**터미널 2 - 프론트엔드**:
+```bash
+cd frontend
+npm start
+```
+
+### 8️⃣ 접속 확인
+- 🌐 **프론트엔드**: http://localhost:3000
+- 🔧 **백엔드 API**: http://localhost:8000
+- 📊 **Admin 페이지**: http://localhost:8000/admin
 
 ---
 
-## RAG ETL 파이프라인
+### 🔧 문제 해결
 
-### 1. Extraction (추출)
+**포트가 이미 사용 중인 경우**:
+```bash
+# Windows
+netstat -ano | findstr "8000 3000"
+taskkill /PID <PID번호> /F
 
-**크롤링 대상:**
+# Mac/Linux
+lsof -ti:8000 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
+```
 
-- [국가정신정보포털 - 질환별 정보](https://www.mentalhealth.go.kr/portal/disease/diseaseList.do)
-- [국가정신정보포털 - 자주찾는 질문(FAQ)](https://www.mentalhealth.go.kr/portal/faq/portalFaqList.do)
+**마이그레이션 오류**:
+```bash
+# DB 초기화 후 다시 시도
+python backend/manage.py flush
+python backend/manage.py migrate
+```
 
-**크롤링 규칙:**
+**OpenAI API 키 오류**:
+- .env 파일에 `OPENAI_API_KEY` 확인
+- 키 앞뒤 공백 제거
+- 따옴표 없이 입력
 
-- 이미지 정보는 RDB에 저장
-- `alt`와 `description`이 없는 단순 일러스트 이미지는 크롤링에서 제외
-- 두 크롤링 작업을 병렬로 진행
+---
 
-**실행:**
+### 📦 선택사항: RAG 데이터 준비
+
+벡터 DB와 이미지 데이터를 사용하려면:
 
 ```bash
+# 1. 데이터 추출 (크롤링)
 python -m rag.services.etl.extract.extract_cli
-```
 
-**결과 확인:**
-
-- `rag/data/raw/` 디렉토리에 크롤링된 데이터 파일 저장 확인
-
----
-
-### 2. Transform & Chunking (변환 및 청킹)
-
-**처리 내용:**
-
-- LangChain splitter를 이용한 청킹 진행
-- FAQ/질병 정보 청킹 기본값: `chunk_size=1500`, `chunk_overlap=200` (약 1,500자 청크, 200자 오버랩)
-- 자가진단테스트/참고문헌 데이터 삭제
-- 테이블을 텍스트로 전환
-- 이미지 메타데이터 생성
-- 텍스트 카테고리 파악 후 `content_type` 추가
-
-**실행:**
-
-```bash
+# 2. 데이터 변환 (청킹)
 python -m rag.services.etl.transform.transform_cli
-```
 
----
-
-### 3. Loader (적재)
-
-**적재 내용:**
-
-- 테이블 생성
-- OpenAI `text-embedding-3-large` (3072차원) 임베딩 생성 및 적재
-
-#### 3.1. 데이터베이스 테이블 생성
-
-```bash
-python -m rag.services.etl.loader.init_db
-```
-
-**옵션:**
-
-- `--reset`: 기존 테이블 삭제 후 재생성
-- `--info`: 테이블 정보만 출력
-
-#### 3.2. 이미지 RDB 적재
-
-```bash
+# 3. RDB 로드 (이미지)
 python -m rag.services.etl.loader.load_rdb
-```
 
-#### 3.3. Vector DB 적재
-
-```bash
+# 4. Vector DB 로드 (임베딩)
 python -m rag.services.etl.loader.load_vectordb
+
+# 5. 그래프 검증
+python rag/build_graph.py
 ```
 
 ---
 
-## 📝 참고사항
+## 🛠️ 기술 스택
 
-- 모든 ETL 단계는 순차적으로 실행해야 합니다 (Extraction → Transform → Loader)
-- 각 단계 실행 후 결과 파일이 올바르게 생성되었는지 확인하세요
-- OpenAI API 키가 올바르게 설정되어 있어야 임베딩 생성이 가능합니다
+| 영역 | 기술 |
+|------|------|
+| **Frontend** | React 18, React Router, Framer Motion |
+| **Backend** | Django 5, DRF, PostgreSQL |
+| **AI/ML** | LangGraph, OpenAI GPT-5, text-embedding-3-large |
+| **Database** | PostgreSQL, pgvector |
+| **Security** | Fernet 암호화, Django 세션 인증 |
+
+---
+
+## 📚 추가 문서
+
+- [상담형 대화 테스트](rag/RUN_COUNSELING_TEST.md)
+- [그래프 구조](rag/graph_structure.png)
+
+---
+
+<div align="center">
+
+**Made with ❤️ by SKN18-4th-3team**
+
+</div>
