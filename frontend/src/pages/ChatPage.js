@@ -11,6 +11,7 @@ import {
 } from "../api/chat";
 import { buildAbsoluteMediaUrl } from "../utils/media";
 import Header from "../components/Header";
+import SphereAvatar from "../components/SphereAvatar";
 import "./ChatPage.css";
 
 const RelatedImageCard = ({ image, index }) => {
@@ -66,10 +67,36 @@ function ChatPage() {
   const location = useLocation();
   const [conversationState, setConversationState] = useState(null);
   const [requiresAnswer, setRequiresAnswer] = useState(false);
+  const pendingRequestRef = useRef(null); // 백그라운드 요청 추적
+  const [toast, setToast] = useState(null); // 토스트 알림 상태
+  const [streamingMessages, setStreamingMessages] = useState({}); // 스트리밍 중인 메시지들 (index -> displayedText)
+  const streamingRefs = useRef({}); // 스트리밍 타이머 참조 저장
+  const previousMessagesLengthRef = useRef(0); // 이전 메시지 개수 추적
   const resetConversationFlow = () => {
     setConversationState(null);
     setRequiresAnswer(false);
   };
+
+  // 토스트 알림 표시 함수
+  const showToast = (message, type = "success") => {
+    console.log("[Toast] 토스트 알림 표시 시작:", message, type);
+    const toastData = { message, type };
+    console.log("[Toast] setToast 호출 전 데이터:", toastData);
+    setToast(toastData);
+    console.log("[Toast] setToast 호출 완료");
+
+    // 3초 후 자동으로 사라짐
+    setTimeout(() => {
+      console.log("[Toast] 토스트 알림 숨김 시작");
+      setToast(null);
+      console.log("[Toast] 토스트 알림 숨김 완료");
+    }, 3000);
+  };
+
+  // 토스트 상태 변화 추적
+  useEffect(() => {
+    console.log("[Toast useEffect] toast 상태 변경됨:", toast);
+  }, [toast]);
 
   useEffect(() => {
     loadChatInfo();
@@ -83,9 +110,98 @@ function ChatPage() {
     }
   }, [location]);
 
+  // MainPage에서 대화 세션을 선택해서 넘어온 경우 자동으로 대화 로드
+  useEffect(() => {
+    const conversationId = location.state?.conversationId;
+    if (
+      conversationId &&
+      isAuthenticated &&
+      selectedConversation?.id !== conversationId
+    ) {
+      handleConversationClick(conversationId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    location.state?.conversationId,
+    isAuthenticated,
+    selectedConversation?.id,
+  ]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 스트리밍 효과: 새로 추가된 assistant 메시지만 글자 하나씩 표시
+  useEffect(() => {
+    const currentMessagesLength = messages.length;
+    const isNewMessage =
+      currentMessagesLength > previousMessagesLengthRef.current;
+
+    // 메시지가 새로 추가된 경우에만 스트리밍 처리
+    if (isNewMessage) {
+      const lastMessage = messages[messages.length - 1];
+      const lastIndex = messages.length - 1;
+
+      // 마지막 메시지가 assistant 메시지이고, 아직 스트리밍이 시작되지 않은 경우
+      if (
+        lastMessage &&
+        lastMessage.role === "assistant" &&
+        lastMessage.content &&
+        !streamingRefs.current[lastIndex]
+      ) {
+        const fullText = lastMessage.content;
+        let currentIndex = 0;
+
+        // 스트리밍 시작
+        const streamInterval = setInterval(() => {
+          if (currentIndex < fullText.length) {
+            setStreamingMessages((prev) => ({
+              ...prev,
+              [lastIndex]: fullText.substring(0, currentIndex + 1),
+            }));
+            currentIndex++;
+            scrollToBottom(); // 스트리밍 중에도 스크롤 유지
+          } else {
+            // 스트리밍 완료
+            clearInterval(streamInterval);
+            streamingRefs.current[lastIndex] = null;
+          }
+        }, 30); // 30ms마다 한 글자씩 (조절 가능)
+
+        streamingRefs.current[lastIndex] = streamInterval;
+      }
+    }
+
+    // 이전 메시지 개수 업데이트
+    previousMessagesLengthRef.current = currentMessagesLength;
+
+    // cleanup: 컴포넌트 언마운트 시 모든 타이머 정리
+    return () => {
+      Object.values(streamingRefs.current).forEach((interval) => {
+        if (interval) clearInterval(interval);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
+  // 로딩 상태가 변경될 때도 스크롤 (응답 시작 시)
+  useEffect(() => {
+    if (isLoading) {
+      // 약간의 지연 후 스크롤 (DOM 업데이트 대기)
+      const timeout1 = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      // 추가로 한 번 더 스크롤 (로딩 인디케이터가 완전히 렌더링된 후)
+      const timeout2 = setTimeout(() => {
+        scrollToBottom();
+      }, 300);
+
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+      };
+    }
+  }, [isLoading]);
 
   // 사이드바가 열릴 때 리스트 상단으로 스크롤
   useEffect(() => {
@@ -101,8 +217,133 @@ function ChatPage() {
     }
   }, [conversations, isSidebarOpen]);
 
+  // 페이지 포커스 시 현재 대화 세션의 최신 메시지 확인 (백그라운드 응답 확인용)
+  useEffect(() => {
+    let pollingInterval = null;
+
+    const checkMessages = async () => {
+      if (isAuthenticated && selectedConversation?.id) {
+        try {
+          const data = await getConversationDetail(selectedConversation.id);
+          const lastMessage = data.messages[data.messages.length - 1];
+
+          // 메시지 수가 증가했으면 업데이트 (백그라운드에서 응답이 완료된 경우)
+          if (data.messages.length > messages.length) {
+            console.log("[ChatPage] 백그라운드 응답 완료 감지:", {
+              이전메시지수: messages.length,
+              새메시지수: data.messages.length,
+            });
+            setMessages(data.messages);
+            setSelectedConversation(data);
+            previousMessagesLengthRef.current = data.messages.length; // 백그라운드 응답은 스트리밍하지 않음
+            setIsLoading(false); // 응답 완료 시 로딩 상태 해제
+
+            // 백그라운드에서 응답이 완료되었을 때 항상 토스트 알림 표시
+            showToast("답변이 준비되었습니다!", "success");
+
+            // 대화 상태는 백엔드에 저장되지 않으므로 복원 불가
+            // 사용자가 다시 대화를 시작하면 상태가 초기화됨
+            // 마지막 메시지가 assistant의 일반 답변이면 대화 상태 초기화
+            if (
+              lastMessage.role === "assistant" &&
+              !lastMessage.content.includes("?")
+            ) {
+              // 질문이 아닌 일반 답변이면 대화 상태 초기화
+              resetConversationFlow();
+            }
+
+            // 폴링 중지 (응답 완료)
+            if (pollingInterval) {
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+            }
+          } else if (
+            // 아직 응답이 완료되지 않았고, 마지막 메시지가 사용자 메시지인 경우
+            data.messages.length === messages.length &&
+            lastMessage &&
+            lastMessage.role === "user" &&
+            pendingRequestRef.current !== null
+          ) {
+            // 백그라운드 요청이 진행 중이면 로딩 상태 표시
+            setIsLoading(true);
+          } else if (pendingRequestRef.current === null) {
+            // 백그라운드 요청이 없으면 로딩 상태 해제
+            setIsLoading(false);
+            if (pollingInterval) {
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+            }
+          }
+        } catch (err) {
+          console.error("대화 세션 새로고침 실패:", err);
+          setIsLoading(false);
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+        }
+      }
+    };
+
+    const handleFocus = async () => {
+      // 백그라운드 요청이 진행 중이면 로딩 상태 표시
+      if (pendingRequestRef.current !== null) {
+        setIsLoading(true);
+      }
+
+      // 즉시 확인
+      await checkMessages();
+
+      // 백그라운드 요청이 진행 중이면 주기적으로 확인 (2초마다)
+      if (pendingRequestRef.current !== null) {
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+        }
+        pollingInterval = setInterval(checkMessages, 2000);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        handleFocus();
+      } else {
+        // 페이지가 숨겨지면 폴링 중지
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    // 페이지 가시성 변경 시에도 확인 (다른 탭에서 돌아올 때)
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // 컴포넌트가 마운트되고 ChatPage에 있을 때도 확인
+    if (
+      window.location.pathname === "/chat" &&
+      isAuthenticated &&
+      selectedConversation?.id
+    ) {
+      handleFocus();
+    }
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [isAuthenticated, selectedConversation?.id, messages.length]);
+
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
   };
 
   const loadChatInfo = async () => {
@@ -132,9 +373,73 @@ function ChatPage() {
       const data = await getConversationDetail(conversationId);
       setSelectedConversation(data);
       setMessages(data.messages);
+      // 스트리밍 상태 초기화 (기존 대화 로드 시)
+      setStreamingMessages({});
+      // 기존 스트리밍 타이머 정리
+      Object.values(streamingRefs.current).forEach((interval) => {
+        if (interval) clearInterval(interval);
+      });
+      streamingRefs.current = {};
+      previousMessagesLengthRef.current = data.messages.length; // 기존 대화는 스트리밍하지 않음
       resetConversationFlow();
+
+      // 대화를 로드한 후, 마지막 메시지가 사용자 메시지인지 확인
+      const lastMessage = data.messages[data.messages.length - 1];
+      if (lastMessage && lastMessage.role === "user") {
+        // 마지막 메시지가 사용자 메시지면 응답이 진행 중일 수 있음
+        // 잠시 후 다시 확인하여 assistant 메시지가 있는지 체크
+        setTimeout(async () => {
+          try {
+            const updatedData = await getConversationDetail(conversationId);
+            const updatedLastMessage =
+              updatedData.messages[updatedData.messages.length - 1];
+
+            // 아직 assistant 메시지가 없으면 로딩 상태 표시
+            if (updatedLastMessage && updatedLastMessage.role === "user") {
+              setIsLoading(true);
+              // 주기적으로 확인 (2초마다)
+              const checkInterval = setInterval(async () => {
+                try {
+                  const checkData = await getConversationDetail(conversationId);
+                  if (checkData.messages.length > data.messages.length) {
+                    // 새로운 메시지가 있으면 업데이트
+                    setMessages(checkData.messages);
+                    setSelectedConversation(checkData);
+                    previousMessagesLengthRef.current =
+                      checkData.messages.length; // 기존 메시지는 스트리밍하지 않음
+                    setIsLoading(false);
+                    clearInterval(checkInterval);
+                  }
+                } catch (err) {
+                  console.error("대화 확인 실패:", err);
+                  clearInterval(checkInterval);
+                  setIsLoading(false);
+                }
+              }, 2000);
+
+              // 30초 후 타임아웃
+              setTimeout(() => {
+                clearInterval(checkInterval);
+                setIsLoading(false);
+              }, 30000);
+            } else {
+              // 이미 assistant 메시지가 있으면 로딩 상태 해제
+              setMessages(updatedData.messages);
+              setSelectedConversation(updatedData);
+              previousMessagesLengthRef.current = updatedData.messages.length; // 기존 메시지는 스트리밍하지 않음
+              setIsLoading(false);
+            }
+          } catch (err) {
+            console.error("대화 확인 실패:", err);
+            setIsLoading(false);
+          }
+        }, 500);
+      } else {
+        setIsLoading(false);
+      }
     } catch (err) {
       console.error("대화 세션 로드 실패:", err);
+      setIsLoading(false);
     }
   };
 
@@ -142,6 +447,14 @@ function ChatPage() {
     // 대화 세션은 실제 메시지 전송 시 생성되므로 여기서는 초기화만
     setSelectedConversation(null);
     setMessages([]);
+    // 스트리밍 상태 초기화
+    setStreamingMessages({});
+    // 기존 스트리밍 타이머 정리
+    Object.values(streamingRefs.current).forEach((interval) => {
+      if (interval) clearInterval(interval);
+    });
+    streamingRefs.current = {};
+    previousMessagesLengthRef.current = 0; // 메시지 개수 초기화
     resetConversationFlow();
   };
 
@@ -186,48 +499,74 @@ function ChatPage() {
         };
         setMessages((prev) => [...prev, userMessage]);
 
-        if (!selectedConversation) {
-          // 대화 세션이 없으면 먼저 생성하지 않고, 메시지 전송 시 백엔드에서 자동 생성되도록
-          // 임시 대화 세션 생성 (나중에 실제 대화 세션으로 교체)
-          const tempConv = await createConversation();
-          setSelectedConversation(tempConv);
+        // 백그라운드에서 응답 처리 (페이지를 벗어나도 계속 진행)
+        const processResponse = async () => {
+          let conversationId = null;
+          try {
+            if (!selectedConversation) {
+              // 대화 세션이 없으면 먼저 생성하지 않고, 메시지 전송 시 백엔드에서 자동 생성되도록
+              // 임시 대화 세션 생성 (나중에 실제 대화 세션으로 교체)
+              const tempConv = await createConversation();
+              conversationId = tempConv.id;
+              setSelectedConversation(tempConv);
 
-          const data = await sendMessage(
-            tempConv.id,
-            messageContent,
-            statePayload,
-            isAnswerMode
-          );
-          if (!isStopped) {
-            const updatedConvs = await getConversations();
-            setConversations(updatedConvs);
-            const actualConv =
-              updatedConvs.find((c) => c.id === tempConv.id) || tempConv;
-            setSelectedConversation(actualConv);
-            if (data?.assistant_message) {
-              setMessages((prev) => [...prev, data.assistant_message]);
+              const data = await sendMessage(
+                tempConv.id,
+                messageContent,
+                statePayload,
+                isAnswerMode
+              );
+              if (!isStopped) {
+                const updatedConvs = await getConversations();
+                setConversations(updatedConvs);
+                const actualConv =
+                  updatedConvs.find((c) => c.id === tempConv.id) || tempConv;
+                conversationId = actualConv.id;
+                setSelectedConversation(actualConv);
+                if (data?.assistant_message) {
+                  console.log("[ChatPage] 새 대화 - 응답 받음");
+                  setMessages((prev) => [...prev, data.assistant_message]);
+                  // 백그라운드 응답 완료 토스트 알림
+                  showToast("답변이 준비되었습니다!", "success");
+                }
+                setConversationState(data?.conversation_state || null);
+                setRequiresAnswer(!!data?.requires_answer);
+              }
+            } else {
+              conversationId = selectedConversation.id;
+              const data = await sendMessage(
+                selectedConversation.id,
+                messageContent,
+                statePayload,
+                isAnswerMode
+              );
+              if (!isStopped) {
+                if (data?.assistant_message) {
+                  console.log("[ChatPage] 기존 대화 - 응답 받음");
+                  setMessages((prev) => [...prev, data.assistant_message]);
+                  // 백그라운드 응답 완료 토스트 알림
+                  showToast("답변이 준비되었습니다!", "success");
+                }
+                setConversationState(data?.conversation_state || null);
+                setRequiresAnswer(!!data?.requires_answer);
+                loadConversations(); // 대화 목록 갱신
+              }
             }
-            setConversationState(data?.conversation_state || null);
-            setRequiresAnswer(!!data?.requires_answer);
+          } catch (err) {
+            console.error("백그라운드 메시지 처리 실패:", err);
+            // 에러가 발생해도 사용자 메시지는 이미 표시되었으므로 계속 진행
+          } finally {
+            setIsLoading(false);
+            pendingRequestRef.current = null;
           }
-        } else {
-          const data = await sendMessage(
-            selectedConversation.id,
-            messageContent,
-            statePayload,
-            isAnswerMode
-          );
-          if (!isStopped) {
-            if (data?.assistant_message) {
-              setMessages((prev) => [...prev, data.assistant_message]);
-            }
-            setConversationState(data?.conversation_state || null);
-            setRequiresAnswer(!!data?.requires_answer);
-            loadConversations(); // 대화 목록 갱신
-          }
-        }
+        };
+
+        // 즉시 로딩 상태 해제 (사용자가 다른 페이지로 이동할 수 있도록)
+        setIsLoading(false);
+        // 백그라운드에서 비동기로 처리 (페이지를 벗어나도 계속 진행)
+        pendingRequestRef.current = processResponse();
       } else {
-        // 게스트 사용자
+        // 게스트 사용자 (게스트는 백그라운드 처리 불필요, 즉시 응답 필요)
         const userMessage = {
           role: "user",
           content: messageContent,
@@ -256,12 +595,13 @@ function ChatPage() {
           setConversationState(data?.conversation_state || null);
           setRequiresAnswer(!!data?.requires_answer);
         }
+        setIsLoading(false);
       }
     } catch (err) {
       console.error("메시지 전송 실패:", err);
       alert("메시지 전송에 실패했습니다.");
-    } finally {
       setIsLoading(false);
+      pendingRequestRef.current = null;
     }
   };
 
@@ -422,7 +762,7 @@ function ChatPage() {
                       </div>
                     )
                   ) : (
-                    <span className="avatar-placeholder">AI</span>
+                    <SphereAvatar size={40} />
                   )}
                 </div>
 
@@ -440,7 +780,15 @@ function ChatPage() {
                       ))}
                     </div>
                   )}
-                  <div className="message-content">{msg.content}</div>
+                  <div className="message-content">
+                    {streamingMessages[idx] !== undefined
+                      ? streamingMessages[idx]
+                      : msg.content}
+                    {streamingMessages[idx] !== undefined &&
+                      streamingMessages[idx].length < msg.content.length && (
+                        <span className="streaming-cursor">|</span>
+                      )}
+                  </div>
                   <div className="message-time">
                     {new Date(msg.created_at).toLocaleTimeString("ko-KR", {
                       hour: "2-digit",
@@ -472,7 +820,7 @@ function ChatPage() {
           {isLoading && (
             <div className="message assistant">
               <div className="message-avatar">
-                <span className="avatar-placeholder">AI</span>
+                <SphereAvatar size={40} />
               </div>
               <div className="message-content-wrapper">
                 <div className="typing-indicator">
@@ -512,6 +860,34 @@ function ChatPage() {
           </form>
         </div>
       </main>
+
+      {/* 토스트 알림 */}
+      {toast && (
+        <div className={`toast-notification toast-${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
+      {/* 디버깅: 토스트 상태 확인 */}
+      {console.log("[ChatPage Render] toast 상태:", toast)}
+
+      {/* 디버깅: 토스트 테스트 버튼 */}
+      <button
+        onClick={() => showToast("답변이 준비되었습니다!", "success")}
+        style={{
+          position: "fixed",
+          bottom: "100px",
+          right: "30px",
+          padding: "10px 20px",
+          background: "#4caf50",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+          zIndex: 9999,
+        }}
+      >
+        토스트 테스트
+      </button>
     </div>
   );
 }

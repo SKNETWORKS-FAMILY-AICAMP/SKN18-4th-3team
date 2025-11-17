@@ -528,6 +528,26 @@
   white-space: pre-wrap;
 }
 
+/* 스트리밍 커서 애니메이션 */
+.streaming-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  color: #666;
+  animation: blink 1s infinite;
+  font-weight: 300;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .message-time {
   font-size: 11px;
   color: #999;
@@ -819,5 +839,64 @@
     width: 32px;
     height: 32px;
     font-size: 14px;
+  }
+}
+
+/* ===================================
+   토스트 알림 (Toast Notification)
+   =================================== */
+.toast-notification {
+  position: fixed;
+  top: 100px; /* 헤더 아래 위치 */
+  right: 30px;
+  background-color: #fff;
+  color: #1a1a1a;
+  padding: 16px 20px 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  font-size: 14px;
+  font-weight: 500;
+  animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s;
+  animation-fill-mode: both;
+  max-width: 300px;
+  word-wrap: break-word;
+  border-left: 4px solid;
+}
+
+.toast-success {
+  border-left-color: #6dd5fa; /* 하늘색 */
+}
+
+.toast-error {
+  border-left-color: #f44336; /* 빨간색 */
+}
+
+.toast-info {
+  border-left-color: #c4b5fd; /* 보라색 */
+}
+
+.toast-warning {
+  border-left-color: #fca5f1; /* 분홍색 */
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
   }
 }

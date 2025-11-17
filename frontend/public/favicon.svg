@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" fill="#f7f7f8"/>
+  <defs>
+    <radialGradient id="skyBlue">
+      <stop offset="0%" stop-color="rgba(109, 213, 250, 0.9)"/>
+      <stop offset="50%" stop-color="rgba(109, 213, 250, 0.65)"/>
+      <stop offset="65%" stop-color="rgba(109, 213, 250, 0.4)"/>
+      <stop offset="80%" stop-color="rgba(109, 213, 250, 0.2)"/>
+      <stop offset="90%" stop-color="rgba(109, 213, 250, 0.1)"/>
+      <stop offset="100%" stop-color="rgba(109, 213, 250, 0)"/>
+    </radialGradient>
+    <radialGradient id="pink">
+      <stop offset="0%" stop-color="rgba(252, 165, 241, 0.9)"/>
+      <stop offset="50%" stop-color="rgba(252, 165, 241, 0.65)"/>
+      <stop offset="65%" stop-color="rgba(252, 165, 241, 0.4)"/>
+      <stop offset="80%" stop-color="rgba(252, 165, 241, 0.2)"/>
+      <stop offset="90%" stop-color="rgba(252, 165, 241, 0.1)"/>
+      <stop offset="100%" stop-color="rgba(252, 165, 241, 0)"/>
+    </radialGradient>
+    <filter id="blur">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/>
+    </filter>
+  </defs>
+  <!-- Sky blue blob (left-top) -->
+  <circle cx="17.56" cy="14.08" r="11.2" fill="url(#skyBlue)" filter="url(#blur)"/>
+  <!-- Pink blob (right-bottom) -->
+  <circle cx="13.12" cy="18.56" r="11.2" fill="url(#pink)" filter="url(#blur)"/>
+  <!-- Glass effect -->
+  <rect width="32" height="32" fill="rgba(255, 255, 255, 0.05)"/>
+</svg>
