@@ -102,8 +102,20 @@ pgvector DB + OpenAI GPT-5
 ![Dashboard](assets/dashboard/4.감정%20키워드.png)
 - '감정 분포 파이 차트'와 '감정 키워드'는 최근에 어떤 정서가 늘었는지, 어떤 표현이 자주 언급되는지 파악 가능
 
+| 구분 | 값 |
+| --- | --- |
+| 기반 모델 | `cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual` |
+| 토크나이저 | transformers 기본 토크나이저 (512 토큰) |
+| 추론 환경 | CPU (`device=-1`) |
+| 결과 레이블 | `positive`, `negative`, `neutral` |
+| score 범위 | 0.0 ~ 1.0 (HuggingFace pipeline confidence) |
+| 모델 선정 이유 | 한국어 지원, 감정 데이터에 특화된 학습으로 섬세한 감정 구분 가능, GPU 없이도 실시간 감정 분석 가능 | 
+
 ![Dashboard](assets/dashboard/5.자주%20검색한%20질환.png)
+- 질환명의 표기를 통일하기 위해서 한 질병에 대한 다양한 표기를(ex: 우울, 우울증, 우울장애) 하나의 대표 표기(ex: 우울장애)로 매핑
+
 - '자주 검색한 질환 TOP 10'으로 이용자가 반복적으로 찾는 질환·증상 목록 파악 가능
+
 ---
 
 ## 🔄 상담형 대화 처리
