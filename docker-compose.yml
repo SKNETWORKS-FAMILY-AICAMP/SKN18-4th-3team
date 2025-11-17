@@ -1,4 +1,36 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        REACT_APP_DJANGO_HOST: ${REACT_APP_DJANGO_HOST:-localhost}
+        REACT_APP_DJANGO_PORT: ${REACT_APP_DJANGO_PORT:-8000}
+    container_name: mindcare-frontend
+    depends_on:
+      - backend
+    ports:
+      - "${REACT_PORT:-3000}:80"
+    networks:
+      - SKN4th_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mindcare-backend
+    env_file:
+      - .env
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - SKN4th_network
+
   # PostgreSQL 데이터베이스
   postgres:
     image: pgvector/pgvector:pg18

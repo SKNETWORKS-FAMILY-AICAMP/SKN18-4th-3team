@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/node_modules
+frontend/.env
+frontend/.env.*
+frontend/build
+.DS_Store

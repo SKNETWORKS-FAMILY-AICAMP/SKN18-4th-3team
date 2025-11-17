@@ -122,13 +122,17 @@ def chat_llm_node(state: Dict[str, Any]) -> Dict[str, Any]:
         parts.append(f"[참고 근거]\n{evidence_text}")
     prompt = "\n\n".join(parts).strip() or "사용자 질문이 비어 있습니다."
 
-    # LLM 존재하지 않으면 안전한 폴백
+    # LLM 존재 여부 확인 후 기본 응답
     if _client is None:
+        hints = []
+        if ctx:
+            hints.append("- 상담 콘텍스트 요약 존재\n")
+        if evidence_text:
+            hints.append("- 정보 근거가 확보되어 있습니다.\n")
         fallback = (
-            "요청을 이해했어요. 현재 모델 연결이 없어 일반 가이드를 드립니다.\n\n"
-            f"{('- 상담 콘텍스트 요약 존재\n' if ctx else '')}"
-            f"{('- 정보 근거가 일부 확보되었습니다.\n' if evidence_text else '')}"
-            "다음으로 어떤 점이 가장 궁금하신가요?"
+            "요청해주신 작업을 처리하는 데 문제가 발생해 임시 안내만 드립니다.\n\n"
+            + "".join(hints)
+            + "다음으로 어떤 점이 가장 궁금하신가요?"
         )
         state["final_answer"] = fallback
         return state
