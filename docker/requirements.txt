@@ -5,33 +5,35 @@ python-dotenv==1.1.1
 # Django REST Framework & CORS
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
+gunicorn==23.0.0
 
-# Image Processing (프로필 이미지)
+# Image Processing
 Pillow==10.2.0
 
-# LangChain 패키지
-langchain==0.3.26 # LangChain 메인 패키지
-langchain-core==0.3.74 # LangChain 코어 기능
-langchain-community==0.3.27 # LangChain 커뮤니티 확장
-langchain_openai==0.2.8 #LangChain OpenAI
-langchain-text-splitters==0.3.8 # LangChain 텍스트 분할 도구
-langchain-experimental==0.3.4 # 새로운 기능을 미리 사용해볼 수 있는 패키지
-langsmith==0.4.14 # LangChain 앱 디버깅, 테스트, 모니터링 도구
-langgraph==0.2.61 # 복잡한 AI 워크플로우를 그래프로 만드는 도구 
+# LangChain stack
+langchain==0.3.26
+langchain-core==0.3.74
+langchain-community==0.3.27
+langchain_openai==0.2.8
+langchain-text-splitters==0.3.8
+langchain-experimental==0.3.4
+langsmith==0.4.14
+langgraph==0.2.61
 
-# 벡터DB 패키지
-pgvector==0.4.1  
+# Vector DB
+pgvector==0.4.1
 psycopg2-binary==2.9.10
 
-# OpenAI
+# OpenAI SDK
 openai>=1.0.0
 
-# 크롤링
+# Browsing / scraping
 playwright==1.55.0
 
-# 암호화 (대화 내용 암호화)
+# Encryption
 cryptography==43.0.3
 
+# Deep learning libs
 transformers==4.57.1
 torch==2.9.1
 sentencepiece==0.2.1

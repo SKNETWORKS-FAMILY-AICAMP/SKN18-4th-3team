@@ -1,5 +1,6 @@
 services:
   frontend:
+    image: eunjeong0911/mindcare-frontend:latest
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -15,6 +16,7 @@ services:
       - SKN4th_network
 
   backend:
+    image: eunjeong0911/mindcare-backend:latest
     build:
       context: .
       dockerfile: backend/Dockerfile
