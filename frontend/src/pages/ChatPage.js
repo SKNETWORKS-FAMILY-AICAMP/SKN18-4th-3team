@@ -19,10 +19,16 @@ const RelatedImageCard = ({ image, index }) => {
   const imageUrl = buildAbsoluteMediaUrl(
     image?.image_url || image?.url || image?.imageUrl
   );
+
+  // 테이블 안의 이미지는 column_header를 우선 사용
+  const displayTitle = image?.table_context?.column_header
+    ? image.table_context.column_header
+    : image?.disease_name;
+
   const altText =
     image?.alt_text ||
     image?.caption ||
-    image?.disease_name ||
+    displayTitle ||
     `관련 이미지 ${index + 1}`;
 
   const handleError = () => setHasError(true);
@@ -39,9 +45,9 @@ const RelatedImageCard = ({ image, index }) => {
       ) : (
         <div className="image-error">이미지를 불러오지 못했습니다.</div>
       )}
-      {(image?.disease_name || image?.caption) && (
+      {(displayTitle || image?.caption) && (
         <div className="image-caption">
-          {image?.disease_name && <strong>{image.disease_name}</strong>}
+          {displayTitle && <strong>{displayTitle}</strong>}
           {image?.caption && <p>{image.caption}</p>}
         </div>
       )}
@@ -72,6 +78,7 @@ function ChatPage() {
   const [streamingMessages, setStreamingMessages] = useState({}); // 스트리밍 중인 메시지들 (index -> displayedText)
   const streamingRefs = useRef({}); // 스트리밍 타이머 참조 저장
   const previousMessagesLengthRef = useRef(0); // 이전 메시지 개수 추적
+  const toastTimeoutRef = useRef(null); // 토스트 타이머 참조
   const resetConversationFlow = () => {
     setConversationState(null);
     setRequiresAnswer(false);
@@ -80,22 +87,47 @@ function ChatPage() {
   // 토스트 알림 표시 함수
   const showToast = (message, type = "success") => {
     console.log("[Toast] 토스트 알림 표시 시작:", message, type);
+
+    // 이전 타이머가 있으면 정리
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = null;
+    }
+
     const toastData = { message, type };
     console.log("[Toast] setToast 호출 전 데이터:", toastData);
+
+    // 상태 업데이트를 즉시 실행
     setToast(toastData);
     console.log("[Toast] setToast 호출 완료");
-
-    // 3초 후 자동으로 사라짐
-    setTimeout(() => {
-      console.log("[Toast] 토스트 알림 숨김 시작");
-      setToast(null);
-      console.log("[Toast] 토스트 알림 숨김 완료");
-    }, 3000);
   };
 
-  // 토스트 상태 변화 추적
+  // 토스트 상태 변화 추적 및 자동 숨김 처리
   useEffect(() => {
     console.log("[Toast useEffect] toast 상태 변경됨:", toast);
+
+    if (toast) {
+      // 토스트가 표시되면 3초 후 자동으로 숨김
+      // 이전 타이머가 있으면 정리
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+
+      toastTimeoutRef.current = setTimeout(() => {
+        console.log("[Toast useEffect] 토스트 알림 숨김 시작");
+        setToast(null);
+        toastTimeoutRef.current = null;
+        console.log("[Toast useEffect] 토스트 알림 숨김 완료");
+      }, 3000);
+
+      // cleanup: 컴포넌트 언마운트 시 타이머 정리
+      return () => {
+        if (toastTimeoutRef.current) {
+          clearTimeout(toastTimeoutRef.current);
+          toastTimeoutRef.current = null;
+        }
+      };
+    }
   }, [toast]);
 
   useEffect(() => {
@@ -443,7 +475,13 @@ function ChatPage() {
     }
   };
 
-  const handleNewConversation = () => {
+  const handleNewConversation = (e) => {
+    // 기본 동작 방지 (새로고침 방지)
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     // 대화 세션은 실제 메시지 전송 시 생성되므로 여기서는 초기화만
     setSelectedConversation(null);
     setMessages([]);
@@ -456,6 +494,9 @@ function ChatPage() {
     streamingRefs.current = {};
     previousMessagesLengthRef.current = 0; // 메시지 개수 초기화
     resetConversationFlow();
+    setIsLoading(false); // 로딩 상태 초기화
+    setIsStopped(false); // 중지 상태 초기화
+    setInputMessage(""); // 입력 메시지 초기화
   };
 
   const handleDeleteConversation = async (conversationId) => {
