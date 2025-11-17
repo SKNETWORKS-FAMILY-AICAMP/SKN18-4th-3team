@@ -75,6 +75,27 @@ pgvector DB + OpenAI GPT-5
 
 ---
 
+## 🖼️ 서비스 스크린샷
+
+### LangSmith 트레이스 캡처
+![LangSmith Trace Flow](docs/images/langsmith-trace.png)
+
+- LangGraph 노드들이 순차적으로 실행되는 화면을 전체가 보이도록 캡처
+- 정보형 / 상담형
+
+### 챗봇 상담 화면
+![Chatbot UI](docs/images/chatbot-session.png)
+
+- React UI에서 사용자 발화, 봇 질문 등 대화 전체가 보이도록 캡처
+- 정보형 / 상담형
+
+### 대시보드
+![Dashboard](docs/images/dashboard-overview.png)
+
+- 마이페이지의 대시보드 캡처
+
+---
+
 ## 🔄 상담형 대화 처리
 
 > 백엔드는 상태 저장 안 함(stateless), 프론트가 `conversation_state` 메모리 보관
