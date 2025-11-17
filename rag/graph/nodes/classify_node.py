@@ -104,6 +104,11 @@ def classify_node(state: Dict[str, Any]) -> Dict[str, Any]:
     Output:
       - state['question_type']: 'information' | 'counseling' | 'unknown'
     """
+    # 이미 분류되어 있으면 LLM 호출 스킵 (상담형 대화 연속 호출 시 최적화)
+    existing_type = state.get("question_type")
+    if existing_type in {"information", "counseling"}:
+        return state
+    
     q = (state.get("user_question") or "").strip()
     
     # 빈 질문은 unknown으로 처리
