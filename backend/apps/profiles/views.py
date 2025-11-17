@@ -1,13 +1,11 @@
 from django.db.models import Count
 from django.db.models.functions import TruncDate, ExtractWeekDay, ExtractHour
-from django.utils import timezone
 from datetime import datetime, timedelta
-from collections import defaultdict, Counter
+from collections import Counter
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from apps.users.models import User
 from apps.chatbot.models import Conversation, Message, SentimentAnalysis, DiseaseQuery
 from .serializers import ProfileUpdateSerializer, ChangePasswordSerializer
 

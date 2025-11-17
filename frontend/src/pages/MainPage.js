@@ -18,7 +18,7 @@ function MainPage() {
     if (isAuthenticated && user?.username) {
       return `안녕하세요, ${user.username}님!\n오늘 마음이 어떠신가요?\n편하게 이야기를 시작해보세요.`;
     }
-    return "안녕하세요, 오늘 마음이 어떠신가요?\n편하게 이야기를 시작해보세요.";
+    return "안녕하세요, \n오늘 마음이 어떠신가요?\n편하게 이야기를 시작해보세요.";
   }, [isAuthenticated, user]);
 
   // 인사말 부분의 끝 인덱스 계산 (로그인 시 첫 번째 \n 전까지)
