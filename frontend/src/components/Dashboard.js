@@ -91,7 +91,6 @@ function Dashboard() {
       <div className="charts-grid">
         {/* 1. 대화 빈도 (라인 차트) */}
         <div className="chart-card">
-          <h3>최근 7일 대화 빈도</h3>
           <LineChart data={conversationFrequency} />
         </div>
 
@@ -149,7 +148,20 @@ function LineChart({ data }) {
           padding + (index / (data.values.length - 1)) * (width - 2 * padding);
         const y =
           height - padding - (value / maxValue) * (height - 2 * padding);
-        return <circle key={index} cx={x} cy={y} r="4" fill="#fca5f1" />;
+        return (
+          <g key={index}>
+            <circle cx={x} cy={y} r="4" fill="#fca5f1" />
+            <text
+              x={x}
+              y={y - 10}
+              textAnchor="middle"
+              fontSize="12"
+              fill="#666"
+            >
+              {value}
+            </text>
+          </g>
+        );
       })}
       {data.labels.map((label, index) => {
         const x =
@@ -174,52 +186,71 @@ function LineChart({ data }) {
 function PieChart({ data }) {
   if (!data || !data.labels || !data.values) return <div>데이터 없음</div>;
 
-  const total = data.values.reduce((sum, value) => sum + value, 0);
-  if (total === 0) return <div>데이터 없음</div>;
-
   const colors = ["#fca5f1", "#F44336", "#FFC107"];
-  let currentAngle = 0;
-
-  const slices = data.values.map((value, index) => {
-    const percentage = (value / total) * 100;
-    const angle = (value / total) * 360;
-    const startAngle = currentAngle;
-    currentAngle += angle;
-
-    const x1 = 100 + 80 * Math.cos((startAngle * Math.PI) / 180);
-    const y1 = 100 + 80 * Math.sin((startAngle * Math.PI) / 180);
-    const x2 = 100 + 80 * Math.cos((currentAngle * Math.PI) / 180);
-    const y2 = 100 + 80 * Math.sin((currentAngle * Math.PI) / 180);
-
-    const largeArc = angle > 180 ? 1 : 0;
-
-    return {
-      d: `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`,
-      color: colors[index],
-      label: data.labels[index],
-      percentage: percentage.toFixed(1),
-    };
-  });
+  const actualTotal = data.values.reduce((sum, value) => sum + value, 0);
+  const hasData = actualTotal > 0;
+  const displayValues = hasData
+    ? data.values
+    : Array.from({ length: data.labels.length }, () => 1);
+  const totalForSvg = displayValues.reduce((sum, value) => sum + value, 0) || 1;
+  const radius = 80;
+  const circumference = 2 * Math.PI * radius;
+  let cumulativeFraction = 0;
 
   return (
     <div className="pie-chart-container">
-      <svg width="200" height="200" viewBox="0 0 200 200">
-        {slices.map((slice, index) => (
-          <path key={index} d={slice.d} fill={slice.color} />
-        ))}
+      <svg
+        width="200"
+        height="200"
+        viewBox="0 0 200 200"
+        className="pie-chart-svg"
+      >
+        {displayValues.map((value, index) => {
+          const fraction = value / totalForSvg;
+          const dashLength = fraction * circumference;
+          const gapLength = Math.max(circumference - dashLength, 0);
+          const offset = cumulativeFraction * circumference;
+          cumulativeFraction += fraction;
+          const dashArray = `${dashLength} ${gapLength}`;
+
+          return (
+            <circle
+              key={index}
+              cx="100"
+              cy="100"
+              r={radius}
+              fill="transparent"
+              stroke={colors[index]}
+              strokeWidth="40"
+              strokeDasharray={dashArray}
+              strokeDashoffset={-offset}
+              transform="rotate(-90 100 100)"
+            />
+          );
+        })}
+        {!hasData && (
+          <circle cx="100" cy="100" r={radius - 35} fill="#f8f8f8" stroke="#eee" />
+        )}
       </svg>
       <div className="pie-legend">
-        {slices.map((slice, index) => (
-          <div key={index} className="legend-item">
-            <span
-              className="legend-color"
-              style={{ backgroundColor: slice.color }}
-            ></span>
-            <span>
-              {slice.label}: {slice.percentage}%
-            </span>
-          </div>
-        ))}
+        {data.labels.map((label, index) => {
+          const percentage = hasData && actualTotal > 0
+            ? ((data.values[index] / actualTotal) * 100).toFixed(1)
+            : "0.0";
+
+          return (
+            <div key={index} className="legend-item">
+              <span
+                className="legend-color"
+                style={{ backgroundColor: colors[index] }}
+              ></span>
+              <span>
+                {label}: {percentage}%
+              </span>
+            </div>
+          );
+        })}
+        {!hasData && <div className="pie-no-data">감정 분석 데이터가 없습니다.</div>}
       </div>
     </div>
   );
