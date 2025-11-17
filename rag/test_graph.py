@@ -62,6 +62,11 @@ def print_node(node_name, state):
         print(f"  [완료] 최종 답변 생성됨 (길이: {len(state['final_answer'])}자)")
 
 
+def print_route(current_node, next_node):
+    """현재 노드에서 다음 노드로의 이동 경로 출력"""
+    print(f"  → 경로: {current_node} -> {next_node}")
+
+
 def test_information():
     """정보형 질문 테스트"""
     print_header("테스트 1: 정보형 질문")
@@ -77,7 +82,7 @@ def test_information():
         print_node("classify", state)
         
         next_route = route_after_classify(state)
-        print(f"  → 다음 노드: {next_route}")
+        print_route("classify", next_route)
         
         if next_route != "search_vectordb":
             print(f"\n⚠️  예상과 다른 라우팅: {next_route}")
@@ -166,7 +171,7 @@ def test_counseling():
             print_node("state_check", state)
             
             next_route = route_after_state_check(state)
-            print(f"  → 다음 노드: {next_route}")
+            print_route("state_check", next_route)
             
             if next_route == "slot_memory":
                 # 모든 slot 완료
@@ -175,14 +180,20 @@ def test_counseling():
                 # slot_memory
                 state = slot_memory_node(state)
                 print_node("slot_memory", state)
+                print_route("slot_memory", "extract")
                 
                 # extract
                 state = extract_node(state)
                 print_node("extract", state)
+                print_route("extract", "search_vectordb")
                 
                 # search_vectordb
                 state = search_vectordb_node(state)
                 print_node("search_vectordb", state)
+                if state.get('retrieved_chunks'):
+                    print_route("search_vectordb", "eval")
+                else:
+                    print_route("search_vectordb", "chat_llm")
                 
                 # eval (선택적)
                 if state.get('retrieved_chunks'):
@@ -190,12 +201,13 @@ def test_counseling():
                     print_node("eval", state)
                     
                     next_route = route_after_eval(state)
-                    print(f"  → 다음 노드: {next_route}")
+                    print_route("eval", next_route)
                     
                     # sql_search (조건부)
                     if next_route == "sql_search":
                         state = sql_search_node(state)
                         print_node("sql_search", state)
+                        print_route("sql_search", "chat_llm")
                 
                 # chat_llm
                 state["node_type"] = "counseling"
@@ -216,6 +228,7 @@ def test_counseling():
                 result = question_node(state)
                 state = {**state, **result}  # 상태 병합
                 print_node("question", state)
+                print_route("question", "answer")
                 
                 # 사용자 답변 받기
                 print()
@@ -234,6 +247,7 @@ def test_counseling():
                 result = answer_node(state)
                 state = {**state, **result}  # 상태 병합
                 print_node("answer", state)
+                print_route("answer", "state_check")
             
             else:
                 print(f"\n⚠️  예상치 못한 라우팅: {next_route}")
