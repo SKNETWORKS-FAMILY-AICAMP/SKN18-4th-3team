@@ -90,10 +90,20 @@ pgvector DB + OpenAI GPT-5
 - 정보형 / 상담형
 
 ### 대시보드
-![Dashboard](docs/images/dashboard-overview.png)
+> **서비스 활성도 + 이용 패턴 + 정서 상태 + 관심 질환**을 살펴 보는 운영/개선용 대시보드
 
-- 마이페이지의 대시보드 캡처
+![Dashboard](assets/dashboard/1.나의대화통계.png)
+- 'KPI 카드'와 '최근 7일 대화 빈도 차트'를 함께 보면 전 날 대비 대화량이 증가했는지, 특정 이벤트 이후 급감했는지 확인 가능
 
+![Dashboard](assets/dashboard/2.시간대별%20대화기록.png)
+- '시간대 히트맵'은 사용자가 언제 가장 많이 찾아오는지(예: 밤 10시 이후) 피크 타임에 대한 패턴 파악 가능
+
+![Dashboard](assets/dashboard/3.감정분포.png)
+![Dashboard](assets/dashboard/4.감정%20키워드.png)
+- '감정 분포 파이 차트'와 '감정 키워드'는 최근에 어떤 정서가 늘었는지, 어떤 표현이 자주 언급되는지 파악 가능
+
+![Dashboard](assets/dashboard/5.자주%20검색한%20질환.png)
+- '자주 검색한 질환 TOP 10'으로 이용자가 반복적으로 찾는 질환·증상 목록 파악 가능
 ---
 
 ## 🔄 상담형 대화 처리
@@ -340,11 +350,13 @@ python rag/build_graph.py
 
 | 영역 | 기술 |
 |------|------|
-| **Frontend** | React 18, React Router, Framer Motion |
-| **Backend** | Django 5, DRF, PostgreSQL |
-| **AI/ML** | LangGraph, OpenAI GPT-5, text-embedding-3-large |
-| **Database** | PostgreSQL, pgvector |
-| **Security** | Fernet 암호화, Django 세션 인증 |
+| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white) |
+| **Backend** | ![Django](https://img.shields.io/badge/Django_5-092E20?style=for-the-badge&logo=django&logoColor=white) ![Django REST Framework](https://img.shields.io/badge/DRF-ff1709?style=for-the-badge&logo=django&logoColor=white&labelColor=ff1709) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) |
+| **AI/ML** | ![LangGraph](https://img.shields.io/badge/LangGraph-0A66C2?style=for-the-badge) ![OpenAI GPT-5](https://img.shields.io/badge/OpenAI_GPT--5-412991?style=for-the-badge&logo=openai&logoColor=white) ![text-embedding-3-large](https://img.shields.io/badge/text--embedding--3--large-10A37F?style=for-the-badge&logo=openai&logoColor=white) |
+| **Database** |![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) ![pgvector](https://img.shields.io/badge/pgvector-4169E1?style=for-the-badge) |
+| **Security** |![Fernet](https://img.shields.io/badge/Fernet_Encryption-000000?style=for-the-badge) ![Django Session Auth](https://img.shields.io/badge/Django_Session_Auth-092E20?style=for-the-badge&logo=django&logoColor=white)|
+
+
 
 ---
 
