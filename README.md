@@ -1,6 +1,7 @@
 # MindCare ∞ | 정신건강 AI 상담 파트너
 
 > 정신건강 정보 검색과 감정 코칭을 하나의 대화 경험으로 엮은 LangGraph 기반 하이브리드 챗봇 서비스
+
 ---
 
 ## 📑 목차
@@ -10,6 +11,9 @@
 - [핵심 기능](#-핵심-기능)
 - [시스템 아키텍처](#-시스템-아키텍처)
 - [데이터 출처](#-데이터-출처)
+- [백엔드 상세 구조](#-백엔드-상세-구조)
+- [프론트엔드 상세 구조](#-프론트엔드-상세-구조)
+- [서비스 스크린샷](#-서비스-스크린샷)
 - [상담형 대화 처리](#-상담형-대화-처리)
 - [로컬 실행](#-로컬-실행)
 
@@ -17,32 +21,34 @@
 
 ## 🛠️ 기술 스택
 
-| 영역 | 기술 |
-|------|------|
-| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white) |
-| **Backend** | ![Django](https://img.shields.io/badge/Django_5-092E20?style=for-the-badge&logo=django&logoColor=white) ![Django REST Framework](https://img.shields.io/badge/DRF-ff1709?style=for-the-badge&logo=django&logoColor=white&labelColor=ff1709) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) |
-| **AI/ML** | ![LangGraph](https://img.shields.io/badge/LangGraph-0A66C2?style=for-the-badge) ![OpenAI GPT-5](https://img.shields.io/badge/OpenAI_GPT--5-412991?style=for-the-badge&logo=openai&logoColor=white) ![text-embedding-3-large](https://img.shields.io/badge/text--embedding--3--large-10A37F?style=for-the-badge&logo=openai&logoColor=white) |
-| **Database** |![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) ![pgvector](https://img.shields.io/badge/pgvector-4169E1?style=for-the-badge) |
-| **Security** |![Fernet](https://img.shields.io/badge/Fernet_Encryption-000000?style=for-the-badge) ![Django Session Auth](https://img.shields.io/badge/Django_Session_Auth-092E20?style=for-the-badge&logo=django&logoColor=white)|
+| 영역         | 기술                                                                                                                                                                                                                                                                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)               |
+| **Backend**  | ![Django](https://img.shields.io/badge/Django_5-092E20?style=for-the-badge&logo=django&logoColor=white) ![Django REST Framework](https://img.shields.io/badge/DRF-ff1709?style=for-the-badge&logo=django&logoColor=white&labelColor=ff1709) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) |
+| **AI/ML**    | ![LangGraph](https://img.shields.io/badge/LangGraph-0A66C2?style=for-the-badge) ![OpenAI GPT-5](https://img.shields.io/badge/OpenAI_GPT--5-412991?style=for-the-badge&logo=openai&logoColor=white) ![text-embedding-3-large](https://img.shields.io/badge/text--embedding--3--large-10A37F?style=for-the-badge&logo=openai&logoColor=white)                   |
+| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) ![pgvector](https://img.shields.io/badge/pgvector-4169E1?style=for-the-badge)                                                                                                                                                               |
+| **Security** | ![Fernet](https://img.shields.io/badge/Fernet_Encryption-000000?style=for-the-badge) ![Django Session Auth](https://img.shields.io/badge/Django_Session_Auth-092E20?style=for-the-badge&logo=django&logoColor=white)                                                                                                                                          |
 
 ---
 
 ## 🎯 서비스 소개
 
 ### 목표
+
 국가정신건강정보포털 데이터 기반 **신뢰할 수 있는 질환 정보** + **사용자 감정 맥락** 동시 케어
 
 ### 타깃
+
 - 2030 직장인 · 취준생
 - 심리 상담이 부담스러운 초입 사용자
 
 ### 해결하는 문제
 
-| 문제 | 기존 한계 | MindCare 해법 |
-|------|----------|--------------|
-| 🚧 감정 표현 어려움 | 맥락 기억 불가 | **LangGraph 슬롯 메모리** (7개 질문) |
-| ⚠️ 정보 신뢰도 | 출처 불분명 | **국가정신정보포털 → pgvector RAG** |
-| 🔒 내용 노출 우려 | Plain text 저장 | **Fernet 암호화 + 게스트 모드** |
+| 문제                | 기존 한계       | MindCare 해법                        |
+| ------------------- | --------------- | ------------------------------------ |
+| 🚧 감정 표현 어려움 | 맥락 기억 불가  | **LangGraph 슬롯 메모리** (7개 질문) |
+| ⚠️ 정보 신뢰도      | 출처 불분명     | **국가정신정보포털 → pgvector RAG**  |
+| 🔒 내용 노출 우려   | Plain text 저장 | **Fernet 암호화 + 게스트 모드**      |
 
 ---
 
@@ -74,20 +80,22 @@
 ## 📊 데이터 출처
 
 1. **질환별 정보 (Disease Information)**
+
    - URL: [국가정신건강정보포털 질환별 정보](https://www.mentalhealth.go.kr/portal/disease/diseaseList.do)
-   - 포함 내용:  약 44개 정신건강 질환 정보(질환 설명, 증상, 원인, 치료법, 예방법)
+   - 포함 내용: 약 44개 정신건강 질환 정보(질환 설명, 증상, 원인, 치료법, 예방법)
 
 2. **자주 찾는 질문 (FAQ)**
    - URL: [국가정신건강정보포털 FAQ](https://www.mentalhealth.go.kr/portal/faq/portalFaqList.do)
    - 포함 내용: 정신건강 관련 질문-답변 쌍
 
+### 데이터 선정 이유
 
-###  데이터 선정 이유
 - 국가 공식 기관 데이터로 신뢰성 보장
 - 정기적으로 업데이트되는 최신 정보
 - 저작권 문제 없는 공공 데이터
 
 ### 데이터 수집 방법 (Crawling Pipeline)
+
 - **Playwright**: 동적 웹페이지 크롤링
 - **BeautifulSoup4**: HTML 파싱 및 데이터 추출
 - **asyncio**: 비동기 병렬 크롤링으로 성능 최적화
@@ -110,15 +118,297 @@ pgvector DB + OpenAI GPT-5
 
 ---
 
+## 🔧 백엔드 상세 구조
+
+### Django 앱 구성
+
+```
+backend/
+├── config/              # Django 설정
+│   ├── settings.py      # 메인 설정 파일
+│   └── urls.py          # 전역 URL 라우팅
+└── apps/                # Django 앱
+    ├── users/           # 사용자 인증
+    ├── chatbot/         # 챗봇 대화 관리
+    └── profiles/        # 프로필 및 대시보드
+```
+
+### 1️⃣ Users 앱 - 사용자 인증
+
+**URL Prefix:** `/users/`
+
+#### 모델
+
+- **User** (AbstractUser 확장)
+  - `email` - 이메일 (로그인 필드, `USERNAME_FIELD`)
+  - `username` - 사용자명
+  - `profile_image` - 프로필 이미지
+
+#### API 엔드포인트
+
+| Method | Endpoint                     | 설명             |
+| ------ | ---------------------------- | ---------------- |
+| POST   | `/users/signup/`             | 회원가입         |
+| POST   | `/users/signup/check-email/` | 이메일 중복 확인 |
+| POST   | `/users/login/`              | 로그인           |
+| POST   | `/users/logout/`             | 로그아웃         |
+
+#### 주요 기능
+
+- 이메일 기반 인증 시스템
+- 3단계 회원가입 프로세스
+- 실시간 이메일 중복 검증 (Serializer 레벨)
+- 프로필 이미지 업로드
+- Admin 패널: 이메일 기반 로그인 지원, 사용자 검색/필터링
+
+---
+
+### 2️⃣ Chatbot 앱 - AI 대화 관리
+
+**URL Prefix:** `/chatbot/`
+
+#### 모델
+
+- **Conversation** - 대화 세션
+
+  - `user` (ForeignKey) - 사용자
+  - `title` (CharField) - 대화 제목 (자동 생성)
+  - `created_at`, `updated_at` - 타임스탬프
+
+- **Message** - 메시지
+
+  - `conversation` (ForeignKey) - 대화 세션
+  - `role` (CharField) - 'user' / 'assistant'
+  - `content` (TextField) - **암호화 저장** (Fernet)
+  - `thinking_process` (JSONField) - LangGraph 노드 진행 과정
+  - `related_images` (JSONField) - 관련 이미지 메타데이터
+  - `get_decrypted_content()` - 복호화 메서드
+
+- **SentimentAnalysis** - 감정 분석
+
+  - `message` (OneToOneField) - 메시지
+  - `sentiment_type` (CharField) - 'positive' / 'negative' / 'neutral'
+  - `sentiment_score` (FloatField) - 감정 점수 (0.0 ~ 1.0)
+  - `keywords` (JSONField) - 감정 키워드
+
+- **DiseaseQuery** - 질환 검색
+
+  - `message` (ForeignKey) - 메시지
+  - `disease_name` (CharField) - 질환명
+
+#### API 엔드포인트
+
+| Method | Endpoint                                    | 설명             |
+| ------ | ------------------------------------------- | ---------------- |
+| GET    | `/chatbot/api/conversations/`               | 대화 목록 조회   |
+| POST   | `/chatbot/api/conversations/`               | 새 대화 생성     |
+| GET    | `/chatbot/api/conversations/<id>/`          | 대화 상세 조회   |
+| DELETE | `/chatbot/api/conversations/<id>/`          | 대화 삭제        |
+| GET    | `/chatbot/api/conversations/<id>/messages/` | 메시지 목록 조회 |
+| POST   | `/chatbot/api/conversations/<id>/messages/` | 메시지 전송      |
+| POST   | `/chatbot/api/chat/`                        | 게스트 대화      |
+
+#### 주요 기능
+
+**메시지 암호화/복호화**
+
+- Signal (`pre_save`) 활용하여 저장 전 자동 암호화
+- DB에 암호화된 상태로 저장
+- `get_decrypted_content()` 메서드로 복호화
+
+**감정 분석 백그라운드 처리**
+
+- **트리거:** AI 응답(Assistant 메시지) 저장 직후 (`post_save` 시그널)
+- **실행 방식:** 비동기 백그라운드 스레드
+- **성능 최적화:** 대화 응답 속도에 영향 없음
+- **분석 대상:** 아직 감정 분석이 안 된 사용자 메시지들 (`sentiment__isnull=True`)
+- **모델:** HuggingFace 감정 분석 모델
+
+**대화 제목 자동 생성**
+
+- 첫 Assistant 메시지 저장 시 Signal로 자동 생성
+- 대화 맥락 기반 제목 생성
+
+**LangGraph 기반 AI 응답**
+
+- 정보형/상담형 듀얼 플로우
+- 질환명 자동 추출 → DiseaseQuery 저장
+- 관련 이미지 검색 → related_images 저장
+- 사고 과정(thinking_process) 시각화
+
+**Admin 설정**
+
+- Conversation, Message, SentimentAnalysis, DiseaseQuery 등록
+- MessageInline으로 대화 내 메시지 표시
+
+---
+
+### 3️⃣ Profiles 앱 - 프로필 및 대시보드
+
+**URL Prefix:** `/profiles/`
+
+#### API 엔드포인트
+
+**프로필 관리:**
+
+| Method | Endpoint                  | 설명                 |
+| ------ | ------------------------- | -------------------- |
+| GET    | `/profiles/`              | 프로필 조회          |
+| PUT    | `/profiles/update/`       | 프로필 수정          |
+| PUT    | `/profiles/password/`     | 비밀번호 변경        |
+| DELETE | `/profiles/delete/`       | 계정 삭제            |
+| POST   | `/profiles/upload-image/` | 프로필 이미지 업로드 |
+
+**대시보드 통계 API:**
+
+| Method | Endpoint                                | 설명                         |
+| ------ | --------------------------------------- | ---------------------------- |
+| GET    | `/profiles/api/kpi/`                    | KPI 데이터 (대화수/메시지수) |
+| GET    | `/profiles/api/conversation-frequency/` | 최근 7일 대화 빈도           |
+| GET    | `/profiles/api/hourly-pattern/`         | 시간대별 대화 패턴 (히트맵)  |
+| GET    | `/profiles/api/sentiment-distribution/` | 감정 분포 (파이 차트)        |
+| GET    | `/profiles/api/emotion-keywords/`       | 감정 키워드 TOP 30           |
+| GET    | `/profiles/api/top-diseases/`           | 자주 검색한 질환 TOP 10      |
+
+#### 주요 기능
+
+- 프로필 CRUD (사용자명, 이미지)
+- 비밀번호 변경 (현재 비밀번호 검증)
+- 계정 삭제 (비밀번호 확인 필수)
+- 6가지 대시보드 차트 데이터 제공
+- 시간대별/요일별 대화 패턴 분석
+- 감정 분석 통계 (긍정/중립/부정 분포)
+- 질환 검색 통계 (TOP 10)
+
+---
+
+## 💻 프론트엔드 상세 구조
+
+### React 프로젝트 구성
+
+```
+frontend/src/
+├── api/                    # API 통신
+│   ├── axios.js           # Axios 설정 (CSRF, 인증)
+│   ├── auth.js            # 인증 API
+│   ├── chat.js            # 채팅 API
+│   └── profile.js         # 프로필 API
+├── components/            # 재사용 컴포넌트
+│   ├── Header.js          # 헤더
+│   ├── Dashboard.js       # 대시보드 차트 (SVG)
+│   ├── Sphere2D.js        # 메인 애니메이션 (Canvas)
+│   └── SphereAvatar.js    # 채팅 아바타
+├── contexts/              # React Context
+│   └── ToastContext.js    # 토스트 알림 전역 상태
+├── pages/                 # 페이지
+│   ├── MainPage.js        # 메인
+│   ├── LoginPage.js       # 로그인
+│   ├── SignupPage.js      # 회원가입 (3단계)
+│   ├── ChatPage.js        # 채팅 (핵심 기능)
+│   └── ProfilePage.js     # 프로필/대시보드
+└── App.js                 # 라우팅
+```
+
+### 주요 페이지 기능
+
+#### 1️⃣ 회원가입 (SignupPage.js)
+
+**3단계 프로세스**
+
+- **Step 1:** 사용자명 + 프로필 이미지
+- **Step 2:** 이메일 + 비밀번호
+  - 실시간 이메일 중복 확인 (디바운스 400ms)
+  - 비��번호 검증 (최소 8자)
+- **Step 3:** 정보 확인 및 최종 제출
+- 프로필 이미지 미리보기
+
+#### 2️⃣ 메인 (MainPage.js)
+
+- 타이핑 효과 인사말 (`"안녕하세요, {사용자명}님!"`)
+- 애니메이션 구체 (Sphere2D, Canvas) - 클릭하여 채팅 시작
+- 대화 목록 사이드바 (검색 기능)
+- 감정 분석 퍼센테이지 바 (negative/neutral/positive)
+- 백그라운드 요청 폴링 (2초마다)
+
+#### 3️⃣ 채팅 (ChatPage.js)
+
+**핵심 기능:**
+
+**대화 관리**
+
+- 대화 세션 생성/조회/삭제
+- 사이드바에서 대화 목록 검색 및 선택
+
+**스트리밍 효과**
+
+- 새 Assistant 메시지만 글자 하나씩 표시
+- 30ms 간격으로 한 글자씩 추가
+- 스트리밍 중 커서 표시 (`|`)
+
+**백그라운드 실행**
+
+- `localStorage`에 진행 중인 요청 저장
+  - `conversationId`, `messageCount` 저장
+- 페이지를 벗어나도 백엔드에서 응답 처리 계속
+- 페이지 포커스 시 2초마다 폴링하여 응답 확인
+- 응답 완료 시 다른 페이지에 있으면 **토스트 알림** 표시
+
+**메시지 표시**
+
+- 사용자 아바타: 프로필 이미지 또는 이니셜
+- AI 아바타: SphereAvatar 컴포넌트
+- **Thinking Process 노드 표시** (LangGraph 진행 과정)
+- **관련 이미지 그리드** (질환 정보)
+
+**게스트 모드**
+
+- 로그인 없이 대화 가능 (저장 안됨)
+
+#### 4️⃣ 프로필/대시보드 (ProfilePage.js & Dashboard.js)
+
+**프로필 관리:**
+
+- 사용자명 변경
+- 비밀번호 변경
+- 계정 탈퇴
+- 프로필 이미지 업로드
+
+**대시보드 통계 (SVG 직접 구현):**
+
+- **KPI 카드:** 총 대화수, 총 메시지수
+- **대화 빈도 라인 차트:** 최근 7일
+- **감정 분포 파이 차트:** 긍정/중립/부정
+- **시간대별 패턴 히트맵:** 24시간 × 7일
+- **감정 키워드 워드 클라우드:** TOP 30
+- **자주 검색한 질환 바 차트:** TOP 10
+- 페이지 포커스 시 자동 새로고침
+
+### 주요 기술 특징
+
+**사용자 경험**
+
+- 3단계 회원가입 - 단계별 검증
+- 백그라운드 실행 - 끊김 없는 상담
+- 스트리밍 효과 - 실시간 응답
+- 게스트 모드 - 로그인 없이 체험 가능
+
+**API 설정**
+
+- CSRF 토큰 자동 추가 (쿠키에서 읽기)
+- 세션 쿠키 자동 전송 (`withCredentials: true`)
+- 401 인증 오류 시 자동 로그인 페이지 리다이렉트
+
+---
+
 ## 🖼️ 서비스 스크린샷
 
 ### LangSmith 트레이스 캡처
+
 - 정보형
-![Smith_정보형](assets/LangSmith/LangSmith_정보형.png)
+  ![Smith_정보형](assets/LangSmith/LangSmith_정보형.png)
 
 - 상담형
-![Smith_상담형](assets/LangSmith/LangSmith_상담형.png)
-
+  ![Smith_상담형](assets/LangSmith/LangSmith_상담형.png)
 
 ### 챗봇 화면
 
@@ -135,18 +425,56 @@ pgvector DB + OpenAI GPT-5
 
 ---
 
+### 회원 인증 화면
+
+**3단계 회원가입 프로세스**
+
+![회원가입 화면 1](assets/user/가입화면_1.png)
+![회원가입 화면 2](assets/user/가입화면_2.png)
+![회원가입 화면 3](assets/user/가입화면_3.png)
+
+- Step 1: 사용자명 + 프로필 이미지
+- Step 2: 이메일 + 비밀번호 (실시간 중복 확인)
+- Step 3: 정보 확인 및 제출
+
+### 메인 및 대화 화면
+
+![메인 화면](assets/main/Main.png)
+
+- 타이핑 효과 인사말, 애니메이션 구체 (Sphere2D)
+- 대화 목록 사이드바 및 감정 분석 퍼센테이지 바
+
+![대화 화면 1](assets/main/대화화면_1.png)
+![대화 화면 2](assets/main/대화화면_2.png)
+
+- 스트리밍 효과로 실시간 응답
+- Thinking Process 노드 표시, 질환 정보 이미지 자동 제공
+
+### 백그라운드 실행 기능
+
+![백그라운드 실행](assets/main/백그라운드%20실행.png)
+
+- 페이지를 벗어나도 응답 처리 계속, 완료 시 토스트 알림
+- 끊김 없는 상담 경험 제공
+
+---
+
 ### 대시보드
-> **서비스 활성도 + 이용 패턴 + 정서 상태 + 관심 질환**을 살펴 보는 운영용 대시보드
+
+> **서비스 활성도 + 이용 패턴 + 정서 상태 + 관심 질환**을 살펴 보는 운영/개선용 대시보드
 
 ![Dashboard](assets/dashboard/1.나의대화통계.png)
+
 - 'KPI 카드'와 '최근 7일 대화 빈도 차트'를 함께 보면 전 날 대비 대화량이 증가했는지, 특정 이벤트 이후 급감했는지 확인 가능
 
 ![Dashboard](assets/dashboard/2.시간대별%20대화기록.png)
+
 - '시간대 히트맵'은 사용자가 언제 가장 많이 찾아오는지(예: 밤 10시 이후) 피크 타임에 대한 패턴 파악 가능
 
 ![Dashboard](assets/dashboard/3.감정분포.png)
 ![Dashboard](assets/dashboard/4.감정%20키워드.png)
-- '감정 분포'와 '감정 키워드'는 최근에 어떤 정서가 늘었는지, 어떤 표현이 자주 언급되는지 파악 가능
+
+- '감정 분포 파이 차트'와 '감정 키워드'는 최근에 어떤 정서가 늘었는지, 어떤 표현이 자주 언급되는지 파악 가능
 
 - 감정 분류 모델 사용
   | 구분 | 값 |
@@ -155,16 +483,26 @@ pgvector DB + OpenAI GPT-5
   | 토크나이저 | transformers 기본 토크나이저 (512 토큰) |
   | 결과 레이블 | `positive`, `negative`, `neutral` |
   | score 범위 | 0.0 ~ 1.0 (HuggingFace pipeline confidence) |
-  | 모델 선정 이유 | 한국어 지원, 감정 데이터에 특화된 학습으로 섬세한 감정 구분 가능 | 
+  | 모델 선정 이유 | 한국어 지원, 감정 데이터에 특화된 학습으로 섬세한 감정 구분 가능 |
 
 ![Dashboard](assets/dashboard/5.자주%20검색한%20질환.png)
+
 - '자주 검색한 질환 TOP 10'으로 이용자가 반복적으로 찾는 질환·증상 목록 파악 가능
 - 질환명의 표기를 통일하기 위해서 한 질병에 대한 다양한 표기를(ex: 우울, 우울증, 우울장애) 하나의 대표 질병(ex: 우울장애)으로 매핑
+
+### 화면 설계 (Wireframe)
+
+![화면설계 1](assets/web_planning/화면설계.jpg)
+![화면설계 2](assets/web_planning/화면설계2.jpg)
+![화면설계 3](assets/web_planning/화면설계3.jpg)
+![화면설계 4](assets/web_planning/화면설계4.jpg)
+![화면설계 5](assets/web_planning/화면설계5.jpg)
+![화면설계 6](assets/web_planning/화면설계6.jpg)
+![화면설계 7](assets/web_planning/화면설계7.jpg)
 
 ---
 
 ## 🔄 상담형 대화 처리
-
 
 ```mermaid
 sequenceDiagram
@@ -196,11 +534,13 @@ sequenceDiagram
     Frontend->>Frontend: 대화 상태 초기화 (종료)
 ```
 
+> 백엔드는 상태 저장 안 함(stateless), 프론트가 `conversation_state` 메모리 보관
+
 ### 상태 관리
 
-| 위치 | 저장 내용 | 목적 |
-|------|----------|------|
-| **DB** | 메시지 (암호화) | 대화 기록 |
+| 위치              | 저장 내용          | 목적           |
+| ----------------- | ------------------ | -------------- |
+| **DB**            | 메시지 (암호화)    | 대화 기록      |
 | **프론트 메모리** | conversation_state | 대화 상태 유지 |
 
 ### 핵심 포인트
@@ -215,6 +555,7 @@ sequenceDiagram
 ## 🚀 로컬 실행 (처음부터 끝까지)
 
 ### 사전 준비
+
 - Python 3.12 이상
 - Node.js 18 이상
 - Docker Desktop (PostgreSQL용)
@@ -223,12 +564,14 @@ sequenceDiagram
 ---
 
 ### 1️⃣ 프로젝트 클론
+
 ```bash
 git clone <repository-url>
 cd SKN18-4th-3team
 ```
 
 ### 2️⃣ 환경 변수 설정
+
 ```bash
 # .env 파일 생성
 cp .env.sample .env
@@ -236,6 +579,7 @@ cp frontend/.env.sample frontend/.env
 ```
 
 **.env 파일 편집** (필수!):
+
 ```bash
 # OpenAI API 키 (필수)
 OPENAI_API_KEY=your-openai-api-key-here
@@ -249,6 +593,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mindcare
 ```
 
 ### 3️⃣ Python 가상환경 & 패키지 설치
+
 ```bash
 # 가상환경 생성
 uv venv .venv
@@ -264,6 +609,7 @@ uv pip install -r docker/requirements.txt
 ```
 
 ### 4️⃣ PostgreSQL 실행 (Docker)
+
 ```bash
 # Docker Compose로 PostgreSQL 시작
 docker-compose up -d
@@ -273,6 +619,7 @@ docker ps
 ```
 
 ### 5️⃣ 데이터베이스 마이그레이션 ⭐
+
 ```bash
 # 마이그레이션 파일 생성
 python backend/manage.py makemigrations
@@ -286,6 +633,7 @@ python backend/manage.py createsuperuser
 ```
 
 ### 6️⃣ 프론트엔드 패키지 설치
+
 ```bash
 cd frontend
 npm install
@@ -295,18 +643,21 @@ cd ..
 ### 7️⃣ 서버 실행
 
 **터미널 1 - 백엔드**:
+
 ```bash
 # 가상환경 활성화 상태에서
 python backend/manage.py runserver 0.0.0.0:8000
 ```
 
 **터미널 2 - 프론트엔드**:
+
 ```bash
 cd frontend
 npm start
 ```
 
 ### 8️⃣ 접속 확인
+
 - 🌐 **프론트엔드**: http://localhost:3000
 - 🔧 **백엔드 API**: http://localhost:8000
 - 📊 **Admin 페이지**: http://localhost:8000/admin
@@ -316,6 +667,7 @@ npm start
 ### 🔧 문제 해결
 
 **포트가 이미 사용 중인 경우**:
+
 ```bash
 # Windows
 netstat -ano | findstr "8000 3000"
@@ -327,6 +679,7 @@ lsof -ti:3000 | xargs kill -9
 ```
 
 **마이그레이션 오류**:
+
 ```bash
 # DB 초기화 후 다시 시도
 python backend/manage.py flush
@@ -334,6 +687,7 @@ python backend/manage.py migrate
 ```
 
 **OpenAI API 키 오류**:
+
 - .env 파일에 `OPENAI_API_KEY` 확인
 - 키 앞뒤 공백 제거
 - 따옴표 없이 입력
