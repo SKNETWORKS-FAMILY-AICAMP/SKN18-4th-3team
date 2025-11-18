@@ -797,7 +797,7 @@ python rag/build_graph.py
 <table>
   <thead>
     <tr>
-      <th style="width: 70px; white-space: nowrap;">이름</th>
+      <th style="width: 80px; text-align: left; white-space: nowrap; word-break: keep-all;">이름</th>
       <th style="text-align: left;">내용</th>
     </tr>
   </thead>
