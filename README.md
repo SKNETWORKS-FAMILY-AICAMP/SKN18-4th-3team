@@ -157,7 +157,6 @@ classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
 
 ## 🔎 노드 · 에이전트 역할 요약
 
-```markdown
 ### 🧩 노드 & 에이전트 역할 요약
 
 | 이름 | 타입 | 주요 역할 |
@@ -176,8 +175,6 @@ classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
 | eval_node | Node | 각 chunk 신뢰도·관련도 평가 후 threshold 이상만 verified_chunks 로 유지 |
 | sql_search_node | Node | verified_chunks metadata 기반으로 PostgreSQL에서 관련 이미지/도표 조회 |
 | chat_llm_node | Node | verified_chunks + 관련 이미지 기반으로 정보형/상담형 최종 답변 생성 |
-
-```
 
 ---
 
