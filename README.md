@@ -158,24 +158,25 @@ classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
 ## 🔎 노드 · 에이전트 역할 요약
 
 ```markdown
-### 노드 & 에이전트 역할 요약
+### 🧩 노드 & 에이전트 역할 요약
 
 | 이름 | 타입 | 주요 역할 |
 |------|------|-----------|
-| `classify_agent` | Agent | 사용자 질문을 `information / counseling / unknown` 으로 분류하고 다음 경로를 결정 |
-| `state_check_agent` | Agent | 상담형일 때 slot 충족 여부를 검사하고 `answer / question / slot_memory` 중 다음 노드로 라우팅 |
-| `memory_agent` | Agent | 7개 slot 데이터를 하나의 `counseling_context` 로 통합하여 extract·chat_llm 양쪽에 전달 |
-| `eval_agent` | Agent | eval_node를 호출해 `verified_chunks`를 만들고, 근거가 없으면 종료·있으면 sql_search로 라우팅 |
-| `classify_node` | Node | LLM으로 질문의 의도를 분석하여 `question_type`(information, counseling, unknown)을 설정 |
-| `state_check_node` | Node | 사용자 입력에서 각 slot(감정, 상황, 신체 등)에 해당하는 정보를 추출하고 `slot_status`, `slot_data` 업데이트 |
-| `question_node` | Node | 현재 미충족 slot에 대해 부드러운 상담 질문 문장을 생성 |
-| `answer_node` | Node | 사용자의 답변을 현재 slot에 저장하고 `slot_status`를 True로 변경 |
-| `slot_memory_node` | Node | 모든 slot 내용을 한 문자열(`counseling_context`)로 합쳐 상담 전체 맥락을 구성 |
-| `extract_node` | Node | 상담 컨텍스트에서 증상·질환 키워드를 추출하여 Vector DB 검색용 `user_question` 생성 |
-| `search_vectordb_node` | Node | pgvector 기반 Vector DB에서 관련 chunk를 검색해 `retrieved_chunks` 반환 |
-| `eval_node` | Node | 각 chunk의 관련도·도움 정도를 LLM으로 스코어링하고 threshold 이상만 `verified_chunks`로 유지 |
-| `sql_search_node` | Node | verified chunk의 metadata를 이용해 PostgreSQL에서 관련 이미지/도표를 조회 |
-| `chat_llm_node` | Node | verified_chunks와 related_images, question_type에 따라 정보형/상담형 최종 답변을 생성 |
+| classify_agent | Agent | 사용자 질문을 information / counseling / unknown 으로 분류하여 다음 경로 결정 |
+| state_check_agent | Agent | 상담형일 때 slot 충족 여부를 검사하고 answer / question / slot_memory 중 다음 노드 결정 |
+| memory_agent | Agent | 7개 slot 데이터를 하나의 counseling_context 로 통합하여 extract·chat_llm 단계로 전달 |
+| eval_agent | Agent | eval_node 결과를 받아 verified_chunks 존재 여부 판정 후 다음 노드(sql_search or 종료) 결정 |
+| classify_node | Node | LLM으로 질문 의도를 분석하여 question_type 설정 |
+| state_check_node | Node | 사용자 입력에서 slot(감정, 상황, 신체 등)에 해당하는 정보 추출 → slot_status, slot_data 업데이트 |
+| question_node | Node | 미충족 slot 에 대한 후속 질문 생성 |
+| answer_node | Node | 사용자 답변을 현재 slot 에 저장 후 slot_status=True 로 변경 |
+| slot_memory_node | Node | 모든 slot 내용을 counseling_context 로 병합 |
+| extract_node | Node | 상담 컨텍스트에서 증상·질환 키워드를 추출하여 Vector DB 검색용 user_question 생성 |
+| search_vectordb_node | Node | pgvector 기반 Vector DB 검색 후 retrieved_chunks 반환 |
+| eval_node | Node | 각 chunk 신뢰도·관련도 평가 후 threshold 이상만 verified_chunks 로 유지 |
+| sql_search_node | Node | verified_chunks metadata 기반으로 PostgreSQL에서 관련 이미지/도표 조회 |
+| chat_llm_node | Node | verified_chunks + 관련 이미지 기반으로 정보형/상담형 최종 답변 생성 |
+
 ```
 
 ---
