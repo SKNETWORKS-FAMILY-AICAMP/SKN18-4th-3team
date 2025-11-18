@@ -34,7 +34,7 @@ LangGraph 기반 FSM 구조로,
 * **정보형 질문**은 RAG 파이프라인으로,
 * **상담형 질문**은 7-slot 인터뷰 파이프라인으로 흘러가며,
   각 노드는 `state` 객체만 주고받는 **stateless 백엔드**로 동작합니다.
-
+```mermaid
 %%{init: {"theme":"base","themeVariables":{
   "primaryColor":"#EAD7FF",
   "primaryTextColor":"#4A3F74",
@@ -150,7 +150,7 @@ N_chat_counsel --> OUT
 classDef purple fill:#EAD7FF,stroke:#C9B2F2,color:#4A3F74;
 classDef pink fill:#FFDFF2,stroke:#F2B8D8,color:#7A4965;
 classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
-
+```
 ---
 
 ## 🔎 노드 · 에이전트 역할 요약
