@@ -113,6 +113,7 @@ pgvector DB + OpenAI GPT-5
 ![챗봇_정보형](assets/chatbot/챗봇_정보형.png)
 
 - 상담형
+
 ![챗봇_상담형1](assets/chatbot/챗봇_상담형1.png)
 ![챗봇_상담형2](assets/chatbot/챗봇_상담형2.png)
 ![챗봇_상담형3](assets/chatbot/챗봇_상담형3.png)
