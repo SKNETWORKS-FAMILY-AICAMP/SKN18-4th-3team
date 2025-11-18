@@ -360,7 +360,7 @@ backend/
 
 ## 💻 프론트엔드 상세 구조
 
-## 화면 설계 (Wireframe)
+### 화면 설계 (Wireframe)
 
 ![화면설계 1](assets/web_planning/화면설계.jpg)
 ![화면설계 2](assets/web_planning/화면설계2.jpg)
@@ -496,18 +496,14 @@ frontend/src/
 - 상담형
   ![Smith_상담형](assets/LangSmith/LangSmith_상담형.png)
 
-### 챗봇 화면
+---
 
-- 정보형
+### 메인 화면
 
-![챗봇_정보형](assets/chatbot/챗봇_정보형.png)
+![메인 화면](assets/main/Main.png)
 
-- 상담형
-
-![챗봇_상담형1](assets/chatbot/챗봇_상담형1.png)
-![챗봇_상담형2](assets/chatbot/챗봇_상담형2.png)
-![챗봇_상담형3](assets/chatbot/챗봇_상담형3.png)
-![챗봇_상담형4](assets/chatbot/챗봇_상담형4.png)
+- 타이핑 효과 인사말, 애니메이션 구체 (Sphere2D)
+- 대화 목록 사이드바 및 감정 분석 퍼센테이지 바
 
 ---
 
@@ -523,18 +519,16 @@ frontend/src/
 - Step 2: 이메일 + 비밀번호 (실시간 중복 확인)
 - Step 3: 정보 확인 및 제출
 
-### 메인 및 대화 화면
+---
 
-![메인 화면](assets/main/Main.png)
-
-- 타이핑 효과 인사말, 애니메이션 구체 (Sphere2D)
-- 대화 목록 사이드바 및 감정 분석 퍼센테이지 바
-
+### 대화 화면
 ![대화 화면 1](assets/main/대화화면_1.png)
 ![대화 화면 2](assets/main/대화화면_2.png)
 
 - 스트리밍 효과로 실시간 응답
 - Thinking Process 노드 표시, 질환 정보 이미지 자동 제공
+
+---
 
 ### 백그라운드 실행 기능
 
@@ -825,7 +819,7 @@ python rag/build_graph.py
     </tr>
     <tr>
       <td style="white-space: nowrap;"><strong>이태호</strong></td>
-      <td>👍</td>
+      <td>분기별 예상질문을 생각해보면서 각 랭그래프에 대한 이해도를 높일 수 있는 시간이었다</td>
     </tr>
     <tr>
       <td style="white-space: nowrap;"><strong>임연희</strong></td>
