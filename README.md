@@ -149,7 +149,36 @@ pgvector DB + OpenAI GPT-5
 
 ## 🔄 상담형 대화 처리
 
-> 백엔드는 상태 저장 안 함(stateless), 프론트가 `conversation_state` 메모리 보관
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant Frontend as 프론트엔드
+    participant Backend as 백엔드(LangGraph)
+
+    User->>Frontend: "요즘 우울해요"
+    Frontend->>Backend: 초기 입력 전달
+    Backend->>Backend: 대화 타입 분류(Classify)
+    Backend->>Backend: 필요한 슬롯 확인(State Check)
+    Backend-->>Frontend: Q1 "언제부터 우울하셨나요?" + 상태(slot_1 완료)
+
+    Frontend->>User: 질문 표시
+    User->>Frontend: "2주 전부터요"
+    Frontend->>Backend: 상태 + 사용자 답변 전송
+    Backend->>Backend: 상태 복원
+    Backend-->>Frontend: Q2 "수면은 어떠신가요?" + 상태(slot_1,2 완료)
+
+    loop 다음 질문 생성 (slot 3~7)
+        User->>Frontend: 사용자 답변
+        Frontend->>Backend: 대화 상태와 함께 전달
+        Backend-->>Frontend: 다음 질문 + 업데이트된 상태
+    end
+
+    Backend->>Backend: 모든 슬롯 충족 → 증상 분석/검색
+    Backend-->>Frontend: 최종 분석 결과(final_answer)
+
+    Frontend->>Frontend: 대화 상태 초기화 (종료)
+```
 
 ### 상태 관리
 
@@ -157,75 +186,6 @@ pgvector DB + OpenAI GPT-5
 |------|----------|------|
 | **DB** | 메시지 (암호화) | 대화 기록 |
 | **프론트 메모리** | conversation_state | 대화 상태 유지 |
-
-**conversation_state 구조**:
-```javascript
-{
-  slot_data: {
-    slot_1: "우울하고 무기력해요",  // 감정
-    slot_2: "2주 전부터",           // 시기
-    slot_3: null,                   // 미수집
-    // ... slot_7까지
-  },
-  slot_status: {
-    slot_1: true,   // 완료
-    slot_2: true,   // 완료
-    slot_3: false,  // 미완료
-  },
-  current_slot: "slot_3",
-  initial_question: "요즘 우울해요",
-  question_type: "counseling"
-}
-```
-
-### 대화 흐름
-
-#### Turn 1: 첫 질문
-```
-사용자: "요즘 우울해요"
-  ↓
-백엔드: 그래프 실행 (classify → state_check → question)
-  ↓
-응답: {
-  bot_question: "언제부터 우울하셨나요?",
-  conversation_state: { slot_1 완료 },
-  requires_answer: true
-}
-  ↓
-프론트: conversation_state 메모리 저장 ✅
-```
-
-#### Turn 2: 사용자 답변
-```
-사용자: "2주 전부터요"
-  ↓
-프론트: 저장된 conversation_state + 답변 전송
-  ↓
-백엔드: 상태 복원 → 그래프 실행
-  ↓
-응답: {
-  bot_question: "수면은 어떠신가요?",
-  conversation_state: { slot_1,2 완료 },
-  requires_answer: true
-}
-  ↓
-프론트: 업데이트된 상태 저장 ✅
-```
-
-#### Turn 3~7: 반복
-7개 슬롯 완료까지 반복
-
-#### 최종: 모든 슬롯 완료
-```
-백엔드: slot_memory → extract → search → chat_llm
-  ↓
-응답: {
-  final_answer: "증상 분석 결과...",
-  requires_answer: false
-}
-  ↓
-프론트: conversation_state = null (종료) ✅
-```
 
 ### 핵심 포인트
 
