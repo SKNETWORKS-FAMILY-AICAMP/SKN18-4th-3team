@@ -90,7 +90,7 @@ N_chat_info --> OUT[최종 답변]:::purple
 classDef purple fill:#EAD7FF,stroke:#C9B2F2,color:#4A3F74;
 classDef pink fill:#FFDFF2,stroke:#F2B8D8,color:#7A4965;
 classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
-
+```
 ---
 
 ## 🧩 Agent-level 아키텍처
@@ -98,6 +98,7 @@ classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
 에이전트들은 LangGraph 상에서 **오케스트레이션 전담 레이어**로,
 각 노드 호출과 분기를 결정하는 “컨트롤러” 역할을 합니다.
 
+```mermaid
 %%{init: {"theme":"base","themeVariables":{
   "primaryColor":"#EAD7FF",
   "primaryTextColor":"#4A3F74",
