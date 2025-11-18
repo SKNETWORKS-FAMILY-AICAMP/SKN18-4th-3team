@@ -102,20 +102,20 @@ pgvector DB + OpenAI GPT-5
 
 ### LangSmith 트레이스 캡처
 - 정보형
-![Smith_정보형](assets\LangSmith\LangSmith_정보형.png)
+![Smith_정보형](assets/LangSmith/LangSmith_정보형.png)
 
 - 상담형
-![Smith_상담형](assets\LangSmith\LangSmith_상담형.png)
+![Smith_상담형](assets/LangSmith/LangSmith_상담형.png)
 
 
 ### 챗봇 화면
 - 정보형
-![챗봇_정보형](assets\chatbot\챗봇_정보형.png)
+![챗봇_정보형](assets/chatbot/챗봇_정보형.png)
 
 - 상담형
-![챗봇_상담형1](assets\chatbot\챗봇_상담형1.png)
-![챗봇_상담형2](assets\chatbot\챗봇_상담형2.png)
-![챗봇_상담형3](assets\chatbot\챗봇_상담형3.png)
+![챗봇_상담형1](assets/chatbot/챗봇_상담형1.png)
+![챗봇_상담형2](assets/chatbot/챗봇_상담형2.png)
+![챗봇_상담형3](assets/chatbot/챗봇_상담형3.png)
 
 ---
 
