@@ -23,13 +23,13 @@
 
 ## 🛠️ 기술 스택
 
-| 영역         | 기술                                                                                                                                                                                                                                                                                                                                                          |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)               |
-| **Backend**  | ![Django](https://img.shields.io/badge/Django_5-092E20?style=for-the-badge&logo=django&logoColor=white) ![Django REST Framework](https://img.shields.io/badge/DRF-ff1709?style=for-the-badge&logo=django&logoColor=white&labelColor=ff1709) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) |
-| **AI/ML**    | ![LangGraph](https://img.shields.io/badge/LangGraph-0A66C2?style=for-the-badge) ![OpenAI GPT-5](https://img.shields.io/badge/OpenAI_GPT--5-412991?style=for-the-badge&logo=openai&logoColor=white) ![text-embedding-3-large](https://img.shields.io/badge/text--embedding--3--large-10A37F?style=for-the-badge&logo=openai&logoColor=white)                   |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) ![pgvector](https://img.shields.io/badge/pgvector-4169E1?style=for-the-badge)                                                                                                                                                               |
-| **Security** | ![Fernet](https://img.shields.io/badge/Fernet_Encryption-000000?style=for-the-badge) ![Django Session Auth](https://img.shields.io/badge/Django_Session_Auth-092E20?style=for-the-badge&logo=django&logoColor=white)                                                                                                                                          |
+| 영역 | 기술|
+| ------ | ------ |
+| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white) ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)|
+| **Backend**  | ![Django](https://img.shields.io/badge/Django_5-092E20?style=for-the-badge&logo=django&logoColor=white) ![Django REST Framework](https://img.shields.io/badge/DRF-ff1709?style=for-the-badge&logo=django&logoColor=white&labelColor=ff1709) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)|
+| **AI/ML**    | ![LangGraph](https://img.shields.io/badge/LangGraph-0A66C2?style=for-the-badge) ![OpenAI GPT-5](https://img.shields.io/badge/OpenAI_GPT--5-412991?style=for-the-badge&logo=openai&logoColor=white) ![text-embedding-3-large](https://img.shields.io/badge/text--embedding--3--large-10A37F?style=for-the-badge&logo=openai&logoColor=white)|
+| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white) ![pgvector](https://img.shields.io/badge/pgvector-4169E1?style=for-the-badge)|
+| **Security** | ![Fernet](https://img.shields.io/badge/Fernet_Encryption-000000?style=for-the-badge) ![Django Session Auth](https://img.shields.io/badge/Django_Session_Auth-092E20?style=for-the-badge&logo=django&logoColor=white)|
 
 ---
 
@@ -171,7 +171,7 @@ classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
 ```
 
 
-### 🧩 노드 & 에이전트 역할 요약
+### 노드 & 에이전트 역할 요약
 
 | 이름 | 타입 | 주요 역할 |
 |------|------|-----------|
@@ -822,7 +822,7 @@ python rag/build_graph.py
     <tr>
       <td style="white-space: nowrap;"><strong>임연희</strong></td>
       <td>
-        랭그래프의 흐름을 이해하고 사용자의 기록을 한눈에 보이도록 웹 서비스를 설계하고 실제로 구현하는 일이 생각보다 복잡하고 섬세한 작업이라는 걸 느꼈습니다. 사용자 관점에서 어떤 지표를 보여줘야 의미있을지 고민하면서 웹 서비스의 설계를 직접 몸으로 배울 수 있었던 경험이었습니다 !
+        랭그래프의 흐름을 이해하고 사용자의 기록을 한눈에 보이도록 웹 서비스를 설계하고 실제로 구현하는 일이 생각보다 복잡하고 섬세한 작업이라는 걸 느꼈습니다. 사용자 관점에서 어떤 지표를 보여줘야 의미있을지 고민하면서 웹 서비스의 설계를 직접 몸으로 배울 수 있었던 경험이었습니다.
       </td>
     </tr>
     <tr>
@@ -831,6 +831,8 @@ python rag/build_graph.py
     </tr>
   </tbody>
 </table>
+
+---
 
 <div align="center">
 
