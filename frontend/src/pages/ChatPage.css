@@ -367,9 +367,9 @@
   transition: margin-left 0.3s ease;
 }
 
-/* 사이드바가 열렸을 때 메시지 컨테이너도 더 밀리도록 */
+/* 사이드바가 열렸을 때 메시지 컨테이너는 중앙 정렬 유지 */
 .chat-main.sidebar-open .messages-container {
-  margin-left: 180px;
+  margin-left: auto;
   margin-right: auto;
 }
 
@@ -715,9 +715,10 @@
   width: calc(100% - 40px);
 }
 
-/* 사이드바가 열렸을 때 입력창도 이동 */
+/* 사이드바가 열렸을 때 입력창도 중앙 정렬 유지 */
 .chat-main.sidebar-open .message-input-container.center {
-  left: calc(50%); /* 사이드바 절반 + 추가 여백으로 더 우측 이동 */
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .message-input-form {
