@@ -27,6 +27,161 @@
 
 ---
 
+## 📌 MindCare 대화 흐름 (LangGraph Node Flow)
+
+LangGraph 기반 FSM 구조로,
+
+* **정보형 질문**은 RAG 파이프라인으로,
+* **상담형 질문**은 7-slot 인터뷰 파이프라인으로 흘러가며,
+  각 노드는 `state` 객체만 주고받는 **stateless 백엔드**로 동작합니다.
+
+```mermaid
+%%{init: {"theme":"base","themeVariables":{
+  "primaryColor":"#EAD7FF",
+  "primaryTextColor":"#4A3F74",
+  "primaryBorderColor":"#C9B2F2",
+  "secondaryColor":"#FFDFF2",
+  "secondaryTextColor":"#7A4965",
+  "secondaryBorderColor":"#F2B8D8",
+  "tertiaryColor":"#DFF2FF",
+  "tertiaryTextColor":"#3A5F73",
+  "tertiaryBorderColor":"#AAD4E5",
+  "lineColor":"#BFBFBF",
+  "nodeTextColor":"#333333",
+  "fontSize":"14px",
+  "fontFamily":"Pretendard, sans-serif"
+}}%%
+
+flowchart TD
+
+%% 사용자 입력
+A[사용자 입력 / user_question]:::purple --> AG1[classify_agent]:::purple
+
+%% 분기
+AG1 -->|정보형| N1[search_vectordb_node]:::blue
+AG1 -->|상담형| AG2[state_check_agent]:::purple
+AG1 -->|unknown| END1[종료 - 서비스 관련 없음]:::pink
+
+%% 상담형 파트
+AG2 -->|user_answer 있음| N_ans[answer_node]:::pink
+N_ans --> AG2
+
+AG2 -->|모든 slot 충족| AG_mem[memory_agent]:::purple
+AG2 -->|미충족 slot 존재| N_q[question_node]:::pink
+N_q --> U[사용자 응답]:::pink --> N_ans
+
+%% slot 모두 채워졌을 때
+AG_mem --> N_ex[extract_node]:::blue
+AG_mem --> N_chat_counsel[chat_llm_node]:::purple
+
+%% 정보형 / 상담형 공통 RAG 경로
+N_ex --> N_vec2[search_vectordb_node]:::blue
+N1 --> AG_eval[eval_agent]:::purple
+N_vec2 --> AG_eval
+
+AG_eval -->|verified 없음| END2[종료 - 관련 정보 없음]:::pink
+
+AG_eval -->|verified 있음| N_sql[sql_search_node]:::blue
+N_sql --> N_chat_info[chat_llm_node]:::purple
+
+N_chat_counsel --> OUT[최종 답변]:::purple
+N_chat_info --> OUT[최종 답변]:::purple
+
+%% 스타일 클래스 정의
+classDef purple fill:#EAD7FF,stroke:#C9B2F2,color:#4A3F74;
+classDef pink fill:#FFDFF2,stroke:#F2B8D8,color:#7A4965;
+classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
+```
+
+---
+
+## 🧩 Agent-level 아키텍처
+
+에이전트들은 LangGraph 상에서 **오케스트레이션 전담 레이어**로,
+각 노드 호출과 분기를 결정하는 “컨트롤러” 역할을 합니다.
+
+```mermaid
+%%{init: {"theme":"base","themeVariables":{
+  "primaryColor":"#EAD7FF",
+  "primaryTextColor":"#4A3F74",
+  "primaryBorderColor":"#C9B2F2",
+  "secondaryColor":"#FFDFF2",
+  "secondaryTextColor":"#7A4965",
+  "secondaryBorderColor":"#F2B8D8",
+  "tertiaryColor":"#DFF2FF",
+  "tertiaryTextColor":"#3A5F73",
+  "tertiaryBorderColor":"#AAD4E5",
+  "lineColor":"#BFBFBF",
+  "nodeTextColor":"#333333",
+  "fontSize":"14px",
+  "fontFamily":"Pretendard, sans-serif"
+}}%%
+
+flowchart TD
+
+%% 사용자
+U[사용자 입력 / user_question]:::purple --> A1[classify_agent (질문 타입 분류)]:::purple
+
+%% 1. 분류 에이전트
+A1 -->|information| P_info[정보형 파이프라인]:::blue
+A1 -->|counseling| A_state[state_check_agent (상담 흐름 제어)]:::purple
+A1 -->|unknown| END0[종료 - 서비스 외 질문]:::pink
+
+%% 2-A. 정보형 에이전트 경로
+subgraph INFO[정보형 (정신질환 정보 검색)]
+    P_info --> N_vec_info[search_vectordb_node]:::blue
+    N_vec_info --> A_eval[eval_agent (검색 근거 검증)]:::purple
+    A_eval -->|verified 없음| END1[관련 정보 없음]:::pink
+    A_eval -->|verified 있음| N_chat_info[chat_llm_node (정보형 답변)]:::purple
+end
+
+%% 2-B. 상담형 에이전트 경로
+subgraph COUNSEL[상담형 (7-slot 인터뷰)]
+    A_state --> S_loop[질문/답변 반복으로 slot 채우기]:::pink
+    S_loop -->|모든 slot 충족| A_mem[memory_agent (상담 컨텍스트 생성)]:::purple
+    A_mem --> N_extract[extract_node (증상 키워드 추출)]:::blue
+    N_extract --> N_vec_counsel[search_vectordb_node]:::blue
+    N_vec_counsel --> A_eval
+    A_mem --> N_chat_counsel[chat_llm_node (상담형 답변)]:::purple
+end
+
+%% 최종 출력
+N_chat_info --> OUT[최종 답변]:::purple
+N_chat_counsel --> OUT
+
+%% 스타일
+classDef purple fill:#EAD7FF,stroke:#C9B2F2,color:#4A3F74;
+classDef pink fill:#FFDFF2,stroke:#F2B8D8,color:#7A4965;
+classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
+```
+
+---
+
+## 🔎 노드 · 에이전트 역할 요약
+
+```markdown
+### 노드 & 에이전트 역할 요약
+
+| 이름 | 타입 | 주요 역할 |
+|------|------|-----------|
+| `classify_agent` | Agent | 사용자 질문을 `information / counseling / unknown` 으로 분류하고 다음 경로를 결정 |
+| `state_check_agent` | Agent | 상담형일 때 slot 충족 여부를 검사하고 `answer / question / slot_memory` 중 다음 노드로 라우팅 |
+| `memory_agent` | Agent | 7개 slot 데이터를 하나의 `counseling_context` 로 통합하여 extract·chat_llm 양쪽에 전달 |
+| `eval_agent` | Agent | eval_node를 호출해 `verified_chunks`를 만들고, 근거가 없으면 종료·있으면 sql_search로 라우팅 |
+| `classify_node` | Node | LLM으로 질문의 의도를 분석하여 `question_type`(information, counseling, unknown)을 설정 |
+| `state_check_node` | Node | 사용자 입력에서 각 slot(감정, 상황, 신체 등)에 해당하는 정보를 추출하고 `slot_status`, `slot_data` 업데이트 |
+| `question_node` | Node | 현재 미충족 slot에 대해 부드러운 상담 질문 문장을 생성 |
+| `answer_node` | Node | 사용자의 답변을 현재 slot에 저장하고 `slot_status`를 True로 변경 |
+| `slot_memory_node` | Node | 모든 slot 내용을 한 문자열(`counseling_context`)로 합쳐 상담 전체 맥락을 구성 |
+| `extract_node` | Node | 상담 컨텍스트에서 증상·질환 키워드를 추출하여 Vector DB 검색용 `user_question` 생성 |
+| `search_vectordb_node` | Node | pgvector 기반 Vector DB에서 관련 chunk를 검색해 `retrieved_chunks` 반환 |
+| `eval_node` | Node | 각 chunk의 관련도·도움 정도를 LLM으로 스코어링하고 threshold 이상만 `verified_chunks`로 유지 |
+| `sql_search_node` | Node | verified chunk의 metadata를 이용해 PostgreSQL에서 관련 이미지/도표를 조회 |
+| `chat_llm_node` | Node | verified_chunks와 related_images, question_type에 따라 정보형/상담형 최종 답변을 생성 |
+```
+
+---
+
 ## 🎯 서비스 소개
 
 ### 목표
