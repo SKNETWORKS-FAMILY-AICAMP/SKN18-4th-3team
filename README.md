@@ -1,7 +1,6 @@
 # MindCare ∞ | 정신건강 AI 상담 파트너
 
 > 정신건강 정보 검색과 감정 코칭을 하나의 대화 경험으로 엮은 LangGraph 기반 하이브리드 챗봇 서비스
-
 ---
 
 ## 📑 목차
@@ -9,6 +8,7 @@
 - [서비스 소개](#-서비스-소개)
 - [핵심 기능](#-핵심-기능)
 - [시스템 아키텍처](#-시스템-아키텍처)
+- [데이터 출처](#-데이터-출처)
 - [상담형 대화 처리](#-상담형-대화-처리)
 - [로컬 실행](#-로컬-실행)
 - [기술 스택](#-기술-스택)
@@ -43,19 +43,42 @@
 
 ### 2️⃣ 상담형 대화 (7개 슬롯)
 
-1. 😔 **감정 상태**: 우울함, 불안함, 무기력함
-2. 📅 **상황/시기**: 언제부터, 어떤 계기
-3. 😴 **신체 변화**: 수면, 식사, 피로감
-4. 💭 **사고 패턴**: 자책감, 부정적 사고
-5. 🚶 **행동 패턴**: 사회적 회피, 활동 감소
-6. 👥 **대인관계**: 가족, 친구, 지지 체계
-7. 🏥 **상담 의향**: 전문 상담/치료 의향
+1. **감정 상태**: 우울함, 불안함, 무기력함
+2. **상황/시기**: 언제부터, 어떤 계기
+3. **신체 변화**: 수면, 식사, 피로감
+4. **사고 패턴**: 자책감, 부정적 사고
+5. **행동 패턴**: 사회적 회피, 활동 감소
+6. **대인관계**: 가족, 친구, 지지 체계
+7. **상담 의향**: 전문 상담/치료 의향
 
 ### 3️⃣ 보안 & 인사이트
 
-- 🔐 **Fernet 암호화**: 모든 대화 암호화 저장
-- 📊 **대시보드**: 감정 분포, 시간대 히트맵, 키워드 클라우드
-- 👤 **게스트 모드**: 로그인 없이 익명 상담
+- **Fernet 암호화**: 모든 대화 암호화 저장
+- **대시보드**: 감정 분포, 시간대 히트맵, 키워드 클라우드
+- **게스트 모드**: 로그인 없이 익명 상담
+
+---
+
+## 📊 데이터 출처
+
+1. **질환별 정보 (Disease Information)**
+   - URL: [국가정신건강정보포털 질환별 정보](https://www.mentalhealth.go.kr/portal/disease/diseaseList.do)
+   - 포함 내용:  약 44개 정신건강 질환 정보(질환 설명, 증상, 원인, 치료법, 예방법)
+
+2. **자주 찾는 질문 (FAQ)**
+   - URL: [국가정신건강정보포털 FAQ](https://www.mentalhealth.go.kr/portal/faq/portalFaqList.do)
+   - 포함 내용: 정신건강 관련 질문-답변 쌍
+
+
+###  데이터 선정 이유
+- 국가 공식 기관 데이터로 신뢰성 보장
+- 정기적으로 업데이트되는 최신 정보
+- 저작권 문제 없는 공공 데이터
+
+### 데이터 수집 방법 (Crawling Pipeline)
+- **Playwright**: 동적 웹페이지 크롤링
+- **BeautifulSoup4**: HTML 파싱 및 데이터 추출
+- **asyncio**: 비동기 병렬 크롤링으로 성능 최적화
 
 ---
 
@@ -78,19 +101,26 @@ pgvector DB + OpenAI GPT-5
 ## 🖼️ 서비스 스크린샷
 
 ### LangSmith 트레이스 캡처
-![LangSmith Trace Flow](docs/images/langsmith-trace.png)
+- 정보형
+![Smith_정보형](assets\LangSmith\LangSmith_정보형.png)
 
-- LangGraph 노드들이 순차적으로 실행되는 화면을 전체가 보이도록 캡처
-- 정보형 / 상담형
+- 상담형
+![Smith_상담형](assets\LangSmith\LangSmith_상담형.png)
 
-### 챗봇 상담 화면
-![Chatbot UI](docs/images/chatbot-session.png)
 
-- React UI에서 사용자 발화, 봇 질문 등 대화 전체가 보이도록 캡처
-- 정보형 / 상담형
+### 챗봇 화면
+- 정보형
+![챗봇_정보형](assets\chatbot\챗봇_정보형.png)
+
+- 상담형
+![챗봇_상담형1](assets\chatbot\챗봇_상담형1.png)
+![챗봇_상담형2](assets\chatbot\챗봇_상담형2.png)
+![챗봇_상담형3](assets\chatbot\챗봇_상담형3.png)
+
+---
 
 ### 대시보드
-> **서비스 활성도 + 이용 패턴 + 정서 상태 + 관심 질환**을 살펴 보는 운영/개선용 대시보드
+> **서비스 활성도 + 이용 패턴 + 정서 상태 + 관심 질환**을 살펴 보는 운영용 대시보드
 
 ![Dashboard](assets/dashboard/1.나의대화통계.png)
 - 'KPI 카드'와 '최근 7일 대화 빈도 차트'를 함께 보면 전 날 대비 대화량이 증가했는지, 특정 이벤트 이후 급감했는지 확인 가능
@@ -100,15 +130,55 @@ pgvector DB + OpenAI GPT-5
 
 ![Dashboard](assets/dashboard/3.감정분포.png)
 ![Dashboard](assets/dashboard/4.감정%20키워드.png)
-- '감정 분포 파이 차트'와 '감정 키워드'는 최근에 어떤 정서가 늘었는지, 어떤 표현이 자주 언급되는지 파악 가능
+- '감정 분포'와 '감정 키워드'는 최근에 어떤 정서가 늘었는지, 어떤 표현이 자주 언급되는지 파악 가능
+
+- 감정 분류 모델 사용
+  | 구분 | 값 |
+  | --- | --- |
+  | 기반 모델 | `cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual` |
+  | 토크나이저 | transformers 기본 토크나이저 (512 토큰) |
+  | 결과 레이블 | `positive`, `negative`, `neutral` |
+  | score 범위 | 0.0 ~ 1.0 (HuggingFace pipeline confidence) |
+  | 모델 선정 이유 | 한국어 지원, 감정 데이터에 특화된 학습으로 섬세한 감정 구분 가능 | 
 
 ![Dashboard](assets/dashboard/5.자주%20검색한%20질환.png)
 - '자주 검색한 질환 TOP 10'으로 이용자가 반복적으로 찾는 질환·증상 목록 파악 가능
+- 질환명의 표기를 통일하기 위해서 한 질병에 대한 다양한 표기를(ex: 우울, 우울증, 우울장애) 하나의 대표 질병(ex: 우울장애)으로 매핑
+
 ---
 
 ## 🔄 상담형 대화 처리
 
-> 백엔드는 상태 저장 안 함(stateless), 프론트가 `conversation_state` 메모리 보관
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant Frontend as 프론트엔드
+    participant Backend as 백엔드(LangGraph)
+
+    User->>Frontend: "요즘 우울해요"
+    Frontend->>Backend: 초기 입력 전달
+    Backend->>Backend: 대화 타입 분류(Classify)
+    Backend->>Backend: 필요한 슬롯 확인(State Check)
+    Backend-->>Frontend: Q1 "언제부터 우울하셨나요?" + 상태(slot_1 완료)
+
+    Frontend->>User: 질문 표시
+    User->>Frontend: "2주 전부터요"
+    Frontend->>Backend: 상태 + 사용자 답변 전송
+    Backend->>Backend: 상태 복원
+    Backend-->>Frontend: Q2 "수면은 어떠신가요?" + 상태(slot_1,2 완료)
+
+    loop 다음 질문 생성 (slot 3~7)
+        User->>Frontend: 사용자 답변
+        Frontend->>Backend: 대화 상태와 함께 전달
+        Backend-->>Frontend: 다음 질문 + 업데이트된 상태
+    end
+
+    Backend->>Backend: 모든 슬롯 충족 → 증상 분석/검색
+    Backend-->>Frontend: 최종 분석 결과(final_answer)
+
+    Frontend->>Frontend: 대화 상태 초기화 (종료)
+```
 
 ### 상태 관리
 
@@ -116,75 +186,6 @@ pgvector DB + OpenAI GPT-5
 |------|----------|------|
 | **DB** | 메시지 (암호화) | 대화 기록 |
 | **프론트 메모리** | conversation_state | 대화 상태 유지 |
-
-**conversation_state 구조**:
-```javascript
-{
-  slot_data: {
-    slot_1: "우울하고 무기력해요",  // 감정
-    slot_2: "2주 전부터",           // 시기
-    slot_3: null,                   // 미수집
-    // ... slot_7까지
-  },
-  slot_status: {
-    slot_1: true,   // 완료
-    slot_2: true,   // 완료
-    slot_3: false,  // 미완료
-  },
-  current_slot: "slot_3",
-  initial_question: "요즘 우울해요",
-  question_type: "counseling"
-}
-```
-
-### 대화 흐름
-
-#### Turn 1: 첫 질문
-```
-사용자: "요즘 우울해요"
-  ↓
-백엔드: 그래프 실행 (classify → state_check → question)
-  ↓
-응답: {
-  bot_question: "언제부터 우울하셨나요?",
-  conversation_state: { slot_1 완료 },
-  requires_answer: true
-}
-  ↓
-프론트: conversation_state 메모리 저장 ✅
-```
-
-#### Turn 2: 사용자 답변
-```
-사용자: "2주 전부터요"
-  ↓
-프론트: 저장된 conversation_state + 답변 전송
-  ↓
-백엔드: 상태 복원 → 그래프 실행
-  ↓
-응답: {
-  bot_question: "수면은 어떠신가요?",
-  conversation_state: { slot_1,2 완료 },
-  requires_answer: true
-}
-  ↓
-프론트: 업데이트된 상태 저장 ✅
-```
-
-#### Turn 3~7: 반복
-7개 슬롯 완료까지 반복
-
-#### 최종: 모든 슬롯 완료
-```
-백엔드: slot_memory → extract → search → chat_llm
-  ↓
-응답: {
-  final_answer: "증상 분석 결과...",
-  requires_answer: false
-}
-  ↓
-프론트: conversation_state = null (종료) ✅
-```
 
 ### 핵심 포인트
 
