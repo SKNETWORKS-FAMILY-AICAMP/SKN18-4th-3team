@@ -118,29 +118,29 @@ classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
 flowchart TD
 
 %% 사용자
-U[사용자 입력 / user_question]:::purple --> A1[classify_agent (질문 타입 분류)]:::purple
+U[사용자 입력 / user_question]:::purple --> A1[classify_agent - 질문 타입 분류]:::purple
 
 %% 1. 분류 에이전트
 A1 -->|information| P_info[정보형 파이프라인]:::blue
-A1 -->|counseling| A_state[state_check_agent (상담 흐름 제어)]:::purple
+A1 -->|counseling| A_state[state_check_agent - 상담 흐름 제어]:::purple
 A1 -->|unknown| END0[종료 - 서비스 외 질문]:::pink
 
 %% 2-A. 정보형 에이전트 경로
-subgraph INFO[정보형 (정신질환 정보 검색)]
+subgraph INFO[정보형 / 정신질환 정보 검색]
     P_info --> N_vec_info[search_vectordb_node]:::blue
-    N_vec_info --> A_eval[eval_agent (검색 근거 검증)]:::purple
+    N_vec_info --> A_eval[eval_agent - 검색 근거 검증]:::purple
     A_eval -->|verified 없음| END1[관련 정보 없음]:::pink
-    A_eval -->|verified 있음| N_chat_info[chat_llm_node (정보형 답변)]:::purple
+    A_eval -->|verified 있음| N_chat_info[chat_llm_node - 정보형 답변]:::purple
 end
 
 %% 2-B. 상담형 에이전트 경로
-subgraph COUNSEL[상담형 (7-slot 인터뷰)]
-    A_state --> S_loop[질문/답변 반복으로 slot 채우기]:::pink
-    S_loop -->|모든 slot 충족| A_mem[memory_agent (상담 컨텍스트 생성)]:::purple
-    A_mem --> N_extract[extract_node (증상 키워드 추출)]:::blue
+subgraph COUNSEL[상담형 / 7-slot 인터뷰]
+    A_state --> S_loop[질문 · 답변 반복으로 slot 채우기]:::pink
+    S_loop -->|모든 slot 충족| A_mem[memory_agent - 상담 컨텍스트 생성]:::purple
+    A_mem --> N_extract[extract_node - 증상 키워드 추출]:::blue
     N_extract --> N_vec_counsel[search_vectordb_node]:::blue
     N_vec_counsel --> A_eval
-    A_mem --> N_chat_counsel[chat_llm_node (상담형 답변)]:::purple
+    A_mem --> N_chat_counsel[chat_llm_node - 상담형 답변]:::purple
 end
 
 %% 최종 출력
@@ -151,6 +151,7 @@ N_chat_counsel --> OUT
 classDef purple fill:#EAD7FF,stroke:#C9B2F2,color:#4A3F74;
 classDef pink fill:#FFDFF2,stroke:#F2B8D8,color:#7A4965;
 classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
+
 ```
 ---
 
