@@ -9,13 +9,15 @@
 - [기술 스택](#-기술-스택)
 - [서비스 소개](#-서비스-소개)
 - [핵심 기능](#-핵심-기능)
-- [시스템 아키텍처](#-시스템-아키텍처)
 - [데이터 출처](#-데이터-출처)
+- [시스템 아키텍처](#-시스템-아키텍처)
+- [Agent-level 아키텍처](#-agent-level-아키텍처)
 - [백엔드 상세 구조](#-백엔드-상세-구조)
 - [프론트엔드 상세 구조](#-프론트엔드-상세-구조)
 - [서비스 스크린샷](#-서비스-스크린샷)
 - [상담형 대화 처리](#-상담형-대화-처리)
 - [로컬 실행](#-로컬-실행)
+- [프로젝트 총평](#️-프로젝트-총평)
 
 ---
 
@@ -102,6 +104,7 @@
 
 ---
 
+
 ## 🏗️ 시스템 아키텍처
 
 ```
@@ -115,6 +118,79 @@ LangGraph (AI 대화 엔진)
   ↓
 pgvector DB + OpenAI GPT-5
 ```
+
+---
+
+## 🧩 Agent-level 아키텍처
+
+
+```mermaid
+%%{init: {"theme":"base","themeVariables":{
+  "primaryColor":"#EAD7FF",
+  "primaryTextColor":"#4A3F74",
+  "primaryBorderColor":"#C9B2F2",
+  "secondaryColor":"#FFDFF2",
+  "secondaryTextColor":"#7A4965",
+  "secondaryBorderColor":"#F2B8D8",
+  "tertiaryColor":"#DFF2FF",
+  "tertiaryTextColor":"#3A5F73",
+  "tertiaryBorderColor":"#AAD4E5",
+  "lineColor":"#BFBFBF",
+  "nodeTextColor":"#333333",
+  "fontSize":"14px",
+  "fontFamily":"Pretendard, sans-serif"
+}}%%
+flowchart TD
+%% 사용자
+U[사용자 입력 / user_question]:::purple --> A1[classify_agent - 질문 타입 분류]:::purple
+%% 1. 분류 에이전트
+A1 -->|information| P_info[정보형 파이프라인]:::blue
+A1 -->|counseling| A_state[state_check_agent - 상담 흐름 제어]:::purple
+A1 -->|unknown| END0[종료 - 서비스 외 질문]:::pink
+%% 2-A. 정보형 에이전트 경로
+subgraph INFO[정보형 / 정신질환 정보 검색]
+    P_info --> N_vec_info[search_vectordb_node]:::blue
+    N_vec_info --> A_eval[eval_agent - 검색 근거 검증]:::purple
+    A_eval -->|verified 없음| END1[관련 정보 없음]:::pink
+    A_eval -->|verified 있음| N_chat_info[chat_llm_node - 정보형 답변]:::purple
+end
+%% 2-B. 상담형 에이전트 경로
+subgraph COUNSEL[상담형 / 7-slot 인터뷰]
+    A_state --> S_loop[질문 · 답변 반복으로 slot 채우기]:::pink
+    S_loop -->|모든 slot 충족| A_mem[memory_agent - 상담 컨텍스트 생성]:::purple
+    A_mem --> N_extract[extract_node - 증상 키워드 추출]:::blue
+    N_extract --> N_vec_counsel[search_vectordb_node]:::blue
+    N_vec_counsel --> A_eval
+    A_mem --> N_chat_counsel[chat_llm_node - 상담형 답변]:::purple
+end
+%% 최종 출력
+N_chat_info --> OUT[최종 답변]:::purple
+N_chat_counsel --> OUT
+%% 스타일
+classDef purple fill:#EAD7FF,stroke:#C9B2F2,color:#4A3F74;
+classDef pink fill:#FFDFF2,stroke:#F2B8D8,color:#7A4965;
+classDef blue fill:#DFF2FF,stroke:#AAD4E5,color:#3A5F73;
+```
+
+
+### 🧩 노드 & 에이전트 역할 요약
+
+| 이름 | 타입 | 주요 역할 |
+|------|------|-----------|
+| classify_agent | Agent | 사용자 질문을 information / counseling / unknown 으로 분류하여 다음 경로 결정 |
+| state_check_agent | Agent | 상담형일 때 slot 충족 여부를 검사하고 answer / question / slot_memory 중 다음 노드 결정 |
+| memory_agent | Agent | 7개 slot 데이터를 하나의 counseling_context 로 통합하여 extract·chat_llm 단계로 전달 |
+| eval_agent | Agent | eval_node 결과를 받아 verified_chunks 존재 여부 판정 후 다음 노드(sql_search or 종료) 결정 |
+| classify_node | Node | LLM으로 질문 의도를 분석하여 question_type 설정 |
+| state_check_node | Node | 사용자 입력에서 slot(감정, 상황, 신체 등)에 해당하는 정보 추출 → slot_status, slot_data 업데이트 |
+| question_node | Node | 미충족 slot 에 대한 후속 질문 생성 |
+| answer_node | Node | 사용자 답변을 현재 slot 에 저장 후 slot_status=True 로 변경 |
+| slot_memory_node | Node | 모든 slot 내용을 counseling_context 로 병합 |
+| extract_node | Node | 상담 컨텍스트에서 증상·질환 키워드를 추출하여 Vector DB 검색용 user_question 생성 |
+| search_vectordb_node | Node | pgvector 기반 Vector DB 검색 후 retrieved_chunks 반환 |
+| eval_node | Node | 각 chunk 신뢰도·관련도 평가 후 threshold 이상만 verified_chunks 로 유지 |
+| sql_search_node | Node | verified_chunks metadata 기반으로 PostgreSQL에서 관련 이미지/도표 조회 |
+| chat_llm_node | Node | verified_chunks + 관련 이미지 기반으로 정보형/상담형 최종 답변 생성 |
 
 ---
 
@@ -283,6 +359,16 @@ backend/
 ---
 
 ## 💻 프론트엔드 상세 구조
+
+## 화면 설계 (Wireframe)
+
+![화면설계 1](assets/web_planning/화면설계.jpg)
+![화면설계 2](assets/web_planning/화면설계2.jpg)
+![화면설계 3](assets/web_planning/화면설계3.jpg)
+![화면설계 4](assets/web_planning/화면설계4.jpg)
+![화면설계 5](assets/web_planning/화면설계5.jpg)
+![화면설계 6](assets/web_planning/화면설계6.jpg)
+![화면설계 7](assets/web_planning/화면설계7.jpg)
 
 ### React 프로젝트 구성
 
@@ -490,16 +576,6 @@ frontend/src/
 - '자주 검색한 질환 TOP 10'으로 이용자가 반복적으로 찾는 질환·증상 목록 파악 가능
 - 질환명의 표기를 통일하기 위해서 한 질병에 대한 다양한 표기를(ex: 우울, 우울증, 우울장애) 하나의 대표 질병(ex: 우울장애)으로 매핑
 
-### 화면 설계 (Wireframe)
-
-![화면설계 1](assets/web_planning/화면설계.jpg)
-![화면설계 2](assets/web_planning/화면설계2.jpg)
-![화면설계 3](assets/web_planning/화면설계3.jpg)
-![화면설계 4](assets/web_planning/화면설계4.jpg)
-![화면설계 5](assets/web_planning/화면설계5.jpg)
-![화면설계 6](assets/web_planning/화면설계6.jpg)
-![화면설계 7](assets/web_planning/화면설계7.jpg)
-
 ---
 
 ## 🔄 상담형 대화 처리
@@ -534,8 +610,6 @@ sequenceDiagram
     Frontend->>Frontend: 대화 상태 초기화 (종료)
 ```
 
-> 백엔드는 상태 저장 안 함(stateless), 프론트가 `conversation_state` 메모리 보관
-
 ### 상태 관리
 
 | 위치              | 저장 내용          | 목적           |
@@ -549,6 +623,8 @@ sequenceDiagram
 - ✅ 프론트가 `conversation_state` 메모리 보관
 - ✅ 매 요청마다 프론트가 상태 전송
 - ✅ `requires_answer` 플래그로 답변 필요 여부 판단
+
+
 
 ---
 
@@ -723,6 +799,46 @@ python rag/build_graph.py
 - [그래프 구조](rag/graph_structure.png)
 
 ---
+
+## 🗨️ 프로젝트 총평
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 50px; white-space: nowrap;">이름</th>
+      <th style="text-align: left;">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="white-space: nowrap;"><strong>최은정</strong></td>
+      <td>상담형 대화를 처음 구현했을 때는 정의한 슬롯 상태가 제대로 갱신되지 않아 같은 질문이 반복되는 무한 루프가 발생했다. 프론트–백엔드 간 state를 정확히 공유하고 매 턴마다 상태를 복원·업데이트하는 구조로 바꾸면서 문제가 해결됐고, 상담형 챗봇에서 가장 중요한 건 상태 관리의 정확성이라는 걸 배웠다.</td>
+    </tr>
+    <tr>
+      <td style="white-space: nowrap;"><strong>김주석</strong></td>
+      <td>4번째 미니 프로젝트를 끝으로 ai 기술을 사용해 서비스를 만들고 그것을 배포하는 것까지 배웠습니다. 아직 정확하게는 이해하지 못했지만 한 싸이클을 돌아 전반적으로 어떻게 작동하는 지는 잘 파악했습니다! 이제 수료하기 전까지 이것을 최대한 이해하려고 노력하겠습니다.또 모르는 것을 친절히 알려주는 팀원들에게 감사의 인사를 올리고 싶습니다!  감사합니다!!</td>
+    </tr>
+    <tr>
+      <td style="white-space: nowrap;"><strong>양진아</strong></td>
+      <td>백엔드 개발을 진행하면서 CSRF가 너무나도 귀찮게 하였다.
+개발 모드에서 백엔드와 프론트엔드의 포트를 테스트하는 과정에서 백그라운드에서 포트가 계속 실행되고 있어 충돌이 발생하거나, 포트 변경 시마다 환경변수 파일을 수정해야하는 번거로움이 있었다. 특히 그 원인을 파악하지 못했을 때는 다른 개발자의 환경에서 동일한 포트로 실행하는 것이 어려웠고, 각자의 로컬 환경에 맞춰 CSRF 설정을 별도로 관리해야 하는 불편함이 있었다.</td>
+    </tr>
+    <tr>
+      <td style="white-space: nowrap;"><strong>이태호</strong></td>
+      <td>👍</td>
+    </tr>
+    <tr>
+      <td style="white-space: nowrap;"><strong>임연희</strong></td>
+      <td>
+        이번 프로젝트를 통해 사용자 관점에서 웹 서비스를 설계하고 실제로 구현하는 일이 생각보다 복잡하고 섬세한 작업이라는 걸 느꼈습니다. 사용자 대시보드와 상담형 노드를 담당하면서 사용자의 기록을 한눈에 보이고자 화면 구성과 흐름을 계속해서 고민하다보니 전체적인 구조를 자연스럽게 이해하게 되었고, 웹 서비스의 설계를 직접 몸으로 배울 수 있었던 경험이었습니다 !
+      </td>
+    </tr>
+    <tr>
+      <td style="white-space: nowrap;"><strong>채린</strong></td>
+      <td>*</td>
+    </tr>
+  </tbody>
+</table>
 
 <div align="center">
 
